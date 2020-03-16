@@ -39,7 +39,7 @@ benchmarkParallelCMADE <- function() {
 						},
 						lower=-100,
 						upper=100,
-						control=list("Lamarckism"=FALSE,"diag.bestVal"=TRUE)
+						control=list("Lamarckism"=FALSE,"diag.all"=TRUE)
 					)
 				},
 				error=function(cond) {
