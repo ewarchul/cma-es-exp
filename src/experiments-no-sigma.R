@@ -1,14 +1,14 @@
 library(tidyverse)
 library(magrittr)
 library(cec2013)
-source("cmaes.R")
+source("cmaes-no-sigma.R")
 source("fancy-funcs.R")
 
 
 ## Funkcja sferyczna
 
-result_2d = cma_es(rep(100, 2), fn = function(x) sphere_cec(x), lower = -100, upper = 100)
-result_10d = cma_es(rep(100, 10), fn = function(x) sphere_cec(x), lower = -100, upper = 100)
+result_2d = cma_es_sigma(rep(100, 2), fn = function(x) sphere_cec(x), lower = -100, upper = 100)
+result_10d = cma_es_sigma(rep(100, 10), fn = function(x) sphere_cec(x), lower = -100, upper = 100)
 
 
 mean_2d = extract_mean(result_2d$diagnostic$pop)
@@ -67,9 +67,9 @@ sphere_df %>%
 
 ### Funkcja liniowa
 
-#result_2d_lin = cma_es(rep(100, 2), fn = function(x) linear_func(x), lower = 1, upper = 1000)
-#result_5d_lin = cma_es(rep(100, 5), fn = function(x) linear_func(x), lower = 1, upper = 1000)
-#result_10d_lin = cma_es(rep(100, 10), fn = function(x) linear_func(x), lower = 1, upper = 1000)
+#result_2d_lin = cma_es_sigma(rep(100, 2), fn = function(x) linear_func(x), lower = 1, upper = 1000)
+#result_5d_lin = cma_es_sigma(rep(100, 5), fn = function(x) linear_func(x), lower = 1, upper = 1000)
+#result_10d_lin = cma_es_sigma(rep(100, 10), fn = function(x) linear_func(x), lower = 1, upper = 1000)
 
 
 #mean_2d_lin = extract_mean(result_2d_lin$diagnostic$pop)

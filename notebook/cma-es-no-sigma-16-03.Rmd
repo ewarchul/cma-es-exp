@@ -1,5 +1,5 @@
 ---
-title: "Best vs mean: f-cja sferyczna & liniowa"
+title: "Best vs mean: f-cja sferyczna & liniowa (bez adaptacji sigma)"
 output:
     html_document:
         toc: true
@@ -15,15 +15,15 @@ fig_height: 20
 library(tidyverse)
 library(magrittr)
 library(cec2013)
-source("../src/cmaes.R")
+source("../src/cmaes-no-sigma.R")
 source("../src/fancy-funcs.R")
 ```
 
 # Funkcja sferyczna
 
 ```{r data}
-result_2d = cma_es(rep(100, 2), fn = function(x) sphere_cec(x), lower = -100, upper = 100)
-result_10d = cma_es(rep(100, 10), fn = function(x) sphere_cec(x), lower = -100, upper = 100)
+result_2d = cma_es_sigma(rep(100, 2), fn = function(x) sphere_cec(x), lower = -100, upper = 100)
+result_10d = cma_es_sigma(rep(100, 10), fn = function(x) sphere_cec(x), lower = -100, upper = 100)
 
 mean_2d = extract_mean(result_2d$diagnostic$pop)
 mean_10d = extract_mean(result_10d$diagnostic$pop)
@@ -57,14 +57,14 @@ sphere_df %>%
 ```{r}
 sphere_df %>% 
   dplyr::filter(dim == "10") %>%
-  value_plot(250)
+  value_plot(500)
 ```
 
 ## Ratio mean vs max
 
 ```{r}
 sphere_df %>%
-  ratio_plot(250)
+  ratio_plot(500)
 ```
 
 ## Odległość euklidesowa do optimum globalnego
@@ -93,8 +93,8 @@ sphere_df %>%
 
 
 ```{r}
-result_2d_lin = cma_es(rep(100, 2), fn = function(x) linear_func(x), lower = 1, upper = 1000)
-result_10d_lin = cma_es(rep(100, 10), fn = function(x) linear_func(x), lower = 1, upper = 1000)
+result_2d_lin = cma_es_sigma(rep(100, 2), fn = function(x) linear_func(x), lower = 1, upper = 1000)
+result_10d_lin = cma_es_sigma(rep(100, 10), fn = function(x) linear_func(x), lower = 1, upper = 1000)
 
 mean_2d_lin = extract_mean(result_2d_lin$diagnostic$pop)
 mean_10d_lin = extract_mean(result_10d_lin$diagnostic$pop)
@@ -160,5 +160,4 @@ linear_df %>%
 linear_df %>%
   sigma_plot()
 ```
-
 

@@ -1,17 +1,28 @@
 # Funkcja sferyczna
 
 sphere_cec = function(.mx) {
-  cec2013::cec2013(1, .mx)
+  cec2017::cec2017(1, .mx)
 }
 
 # Funkcja "liniowa"
 
 linear_func = function(.mx) {
   xarg = .mx %>% t() %>% t()
-  apply(xarg, 2, function(.x) {
-    max(1, xarg[1] + sum(xarg[-1]^2)) 
+  apply(xarg, 2, function(x) {
+    max(1, x[1] + sum(x[-1]^2))
   })
 }
+
+
+#' Parametr sigma
+#'
+#' @description
+#' Funkcja ekstrahuje parametr sigma
+
+extract_sigma = function(.diag) {
+   .diag$sigma 
+  }
+
 
 #' Punkt środkowy populacji
 #'
@@ -88,16 +99,17 @@ compute_nearness = function(.set, .min) {
 #' Funkcja generuje zbiór wartości pochodnych liczonych na podstawie przystosowania
 #' punktu środkowego oraz punktu najlepszego
 
-generate_ds = function(.res, .mean, .best, .func, ...) {
+generate_ds = function(.res, .mean, .best, .sigma, .func, ...) {
   tibble::tibble(
     t = 1:gen_amount(.res$diagnostic$pop),
     func_val_mean = do_eval(.mean, .func), 
     func_val_best = do_eval(.best, .func)) %>%
   dplyr::mutate(
-    ratio = abs((func_val_best)/(func_val_mean)),
+    ratio = func_val_best/func_val_mean,
     mean_best_dist = compute_distance(.mean, .best),
     best_dist = compute_nearness(.best, ...),
-    mean_dist = compute_nearness(.mean, ...))
+    mean_dist = compute_nearness(.mean, ...),
+    sigma_value = .sigma)
 }
 
 
@@ -116,8 +128,10 @@ value_plot = function(.data, .tupper=NA) {
   max_value = max(.data$func_val_best, .data$func_val_mean) 
   .data %>% 
     ggplot2::ggplot(aes(x = t)) +
-      ggplot2::geom_line(aes(y = func_val_mean/max_value, colour = 'mean'), linetype = "dashed") + 
-      ggplot2::geom_line(aes(y = func_val_best/max_value, colour = 'best')) + 
+      ggplot2::geom_point(aes(y = log(func_val_mean), shape = 'mean'), color = "black") + 
+      ggplot2::geom_line(aes(y = log(func_val_mean), group = 'mean'), linetype = "dashed", color = "black") + 
+      ggplot2::geom_point(aes(y = log(func_val_best), shape = 'best'), color = "gray") + 
+      ggplot2::geom_line(aes(y = log(func_val_best), group = 'best'), linetype = "dashed", color = "gray") + 
       ggplot2::xlim(0, ifelse(missing(.tupper), NA, .tupper)) +
       ggplot2::ggtitle("Fitness") +
       theme_bw()
@@ -131,10 +145,23 @@ value_plot = function(.data, .tupper=NA) {
 ratio_plot = function(.data, .tupper=NA) {
   .data %>% 
     ggplot2::ggplot(aes(x = t)) +
-      ggplot2::geom_line(aes(y = ratio, colour = dim)) +
-      ggplot2::geom_hline(yintercept = 1, color = "red") +
+      ggplot2::geom_line(aes(y = log(ratio))) +
+      ggplot2::geom_point(aes(y = log(ratio))) +
+      ggplot2::facet_wrap(. ~ dim, ncol = 1) + 
+      ggplot2::geom_hline(yintercept = 0, color = "gray") +
       ggplot2::xlim(0, ifelse(missing(.tupper), NA, .tupper)) +
       ggplot2::ggtitle("Ratio best vs mean") +
+      theme_bw()
+}
+
+
+sigma_plot = function(.data, .tupper=NA) {
+  .data %>% 
+    ggplot2::ggplot(aes(x = t)) +
+      ggplot2::geom_line(aes(y = log(sigma_value))) +
+      ggplot2::facet_wrap( .~ dim, ncol = 1) + 
+      ggplot2::xlim(0, ifelse(missing(.tupper), NA, .tupper)) +
+      ggplot2::ggtitle("Sigma") +
       theme_bw()
 }
 
@@ -144,12 +171,28 @@ ratio_plot = function(.data, .tupper=NA) {
 #' Funkcja wylicza odległość między zbiorem punktów, a wskazanym punktem 
 #' @param .tupper ograniczenie pokazywanych generacji populacji na wykresie :: integer
 
-distance_plot = function(.data, .dist, .tupper=NA) {
-  .dist = rlang::sym(.dist)
+distance_plot = function(.data, .tupper=NA) {
   .data %>% 
-    ggplot2::ggplot(aes(x = t, y = !!.dist)) +
-      ggplot2::geom_line(aes(colour = dim)) + 
-      ggplot2::ggtitle("Euclid distance best vs mean") +
+    ggplot2::ggplot(aes(x = t)) +
+      ggplot2::geom_point(aes(y = best_dist, shape = "best_dist"), color = "gray") + 
+      ggplot2::geom_line(aes(y = best_dist), color = "gray", linetype="dashed") + 
+      ggplot2::geom_point(aes(y = mean_dist, shape = "mean_dist"), color = "black") + 
+      ggplot2::geom_line(aes(y = mean_dist), color = "black", linetype="dashed") + 
+      ggplot2::facet_wrap(. ~ dim, ncol = 1) + 
+      ggplot2::ggtitle(paste0("Euclid distances to global optimum")) +
       ggplot2::xlim(0, ifelse(missing(.tupper), NA, .tupper)) +
       theme_bw()
 }
+
+closeness_plot = function(.data, .tupper = NA) { 
+  .data %>%
+  ggplot2::ggplot(aes(x = t)) +
+    ggplot2::geom_point(aes(y = mean_best_dist), color = "black") + 
+    ggplot2::geom_line(aes(y = mean_best_dist), color = "black", linetype="dashed") + 
+    ggplot2::facet_wrap(. ~ dim, ncol = 1) + 
+    ggplot2::ggtitle(paste0("Euclid between best and mean point")) +
+    ggplot2::xlim(0, ifelse(missing(.tupper), NA, .tupper)) +
+    theme_bw()
+}
+
+
