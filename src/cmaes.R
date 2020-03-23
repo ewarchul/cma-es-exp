@@ -135,7 +135,7 @@ cma_es <- function(par, fn, ..., lower, upper, control=list()) {
   ## Parameters:
   trace       <- controlParam("trace", FALSE)
   fnscale     <- controlParam("fnscale", 1)
-  stopfitness <- controlParam("stopfitness", -Inf)
+  stopfitness <- controlParam("stopfitness", -10^-3)
   budget      <- controlParam("budget", 10000*N )                     ## The maximum number of fitness function calls
   sigma       <- controlParam("sigma", 0.5)
   sc_tolx     <- controlParam("stop.tolx", 1e-12 * sigma) ## Undocumented stop criterion

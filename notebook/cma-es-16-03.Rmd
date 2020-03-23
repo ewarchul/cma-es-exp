@@ -22,8 +22,8 @@ source("../src/fancy-funcs.R")
 # Funkcja sferyczna
 
 ```{r data}
-result_2d = cma_es(rep(100, 2), fn = function(x) sphere_cec(x), lower = -100, upper = 100)
-result_10d = cma_es(rep(100, 10), fn = function(x) sphere_cec(x), lower = -100, upper = 100)
+result_2d = cma_es(rep(100, 2), fn = function(x) sphere(x), lower = -100, upper = 100)
+result_10d = cma_es(rep(100, 10), fn = function(x) sphere(x), lower = -100, upper = 100)
 
 mean_2d = extract_mean(result_2d$diagnostic$pop)
 mean_10d = extract_mean(result_10d$diagnostic$pop)
@@ -31,12 +31,12 @@ mean_10d = extract_mean(result_10d$diagnostic$pop)
 sigma_2d = extract_sigma(result_2d$diagnostic)
 sigma_10d = extract_sigma(result_10d$diagnostic)
 
-best_2d = extract_best(result_2d$diagnostic$pop, sphere_cec)
-best_10d = extract_best(result_10d$diagnostic$pop, sphere_cec)
+best_2d = extract_best(result_2d$diagnostic$pop, sphere)
+best_10d = extract_best(result_10d$diagnostic$pop, sphere)
 
-data_2d = generate_ds(result_2d, mean_2d, best_2d, sigma_2d, sphere_cec, c(-21.98481, 11.55500)) %>%
+data_2d = generate_ds(result_2d, mean_2d, best_2d, sigma_2d, sphere, c(-21.98481, 11.55500)) %>%
   dplyr::mutate(dim = "2")
-data_10d = generate_ds(result_10d, mean_10d, best_10d, sigma_10d, sphere_cec, c(-21.98481, 11.55500, -36.01068,  69.37273, -37.60887, -48.53629,  53.76477,  13.71857,  69.82859, -18.62781)) %>%
+data_10d = generate_ds(result_10d, mean_10d, best_10d, sigma_10d, sphere, c(-21.98481, 11.55500, -36.01068,  69.37273, -37.60887, -48.53629,  53.76477,  13.71857,  69.82859, -18.62781)) %>%
   dplyr::mutate(dim = "10")
 
 sphere_df = purrr::reduce(list(data_2d, data_10d), dplyr::bind_rows)
@@ -49,7 +49,7 @@ sphere_df = purrr::reduce(list(data_2d, data_10d), dplyr::bind_rows)
 ```{r}
 sphere_df %>% 
   dplyr::filter(dim == "2") %>%
-  value_plot(250)
+  value_plot()
 ```
 
 ### 10-D
@@ -57,28 +57,28 @@ sphere_df %>%
 ```{r}
 sphere_df %>% 
   dplyr::filter(dim == "10") %>%
-  value_plot(250)
+  value_plot()
 ```
 
 ## Ratio mean vs max
 
 ```{r}
 sphere_df %>%
-  ratio_plot(250)
+  ratio_plot(.yupper = 30)
 ```
 
 ## Odległość euklidesowa do optimum globalnego
 
 ```{r}
 sphere_df %>%
-  closeness_plot(250)
+  closeness_plot()
 ```
 
 ## Odległość euklidesowa {mean, best} vs glob-optim
 
 ```{r}
 sphere_df %>%
-  distance_plot(250)
+  distance_plot()
 ```
 
 ## Przebieg parametru sigma
@@ -122,7 +122,7 @@ linear_df = purrr::reduce(list(data_2d_lin, data_10d_lin), dplyr::bind_rows)
 ```{r}
 linear_df %>% 
   dplyr::filter(dim == "2") %>%
-  value_plot(250)
+  value_plot()
 ```
 
 ### 10-D
@@ -130,28 +130,28 @@ linear_df %>%
 ```{r}
 linear_df %>% 
   dplyr::filter(dim == "10") %>%
-  value_plot(250)
+  value_plot()
 ```
 
 ## Ratio mean vs max
 
 ```{r}
 linear_df %>%
-  ratio_plot(250)
+  ratio_plot()
 ```
 
 ## Odległość euklidesowa do optimum globalnego
 
 ```{r}
 linear_df %>%
-  closeness_plot(250)
+  closeness_plot()
 ```
 
 ## Odległość euklidesowa {mean, best} vs glob-optim
 
 ```{r}
 linear_df %>%
-  distance_plot(250)
+  distance_plot()
 ```
 
 ## Przebieg parametru sigma

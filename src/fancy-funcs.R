@@ -4,13 +4,14 @@ sphere_cec = function(.mx) {
   cec2017::cec2017(1, .mx)
 }
 
+sphere = function(.mx) {
+  crossprod(.mx)
+}
+
 # Funkcja "liniowa"
 
-linear_func = function(.mx) {
-  xarg = .mx %>% t() %>% t()
-  apply(xarg, 2, function(x) {
-    max(1, x[1] + sum(x[-1]^2))
-  })
+linear_func = function(.x) {
+  .x[1] + sum(.x[-1]^2)
 }
 
 
@@ -128,10 +129,10 @@ value_plot = function(.data, .tupper=NA) {
   max_value = max(.data$func_val_best, .data$func_val_mean) 
   .data %>% 
     ggplot2::ggplot(aes(x = t)) +
-      ggplot2::geom_point(aes(y = log(func_val_mean), shape = 'mean'), color = "black") + 
-      ggplot2::geom_line(aes(y = log(func_val_mean), group = 'mean'), linetype = "dashed", color = "black") + 
-      ggplot2::geom_point(aes(y = log(func_val_best), shape = 'best'), color = "gray") + 
-      ggplot2::geom_line(aes(y = log(func_val_best), group = 'best'), linetype = "dashed", color = "gray") + 
+      ggplot2::geom_point(aes(y = log10(func_val_mean), shape = 'mean'), color = "black") + 
+      ggplot2::geom_line(aes(y = log10(func_val_mean), group = 'mean'), linetype = "dashed", color = "black") + 
+      ggplot2::geom_point(aes(y = log10(func_val_best), shape = 'best'), color = "gray") + 
+      ggplot2::geom_line(aes(y = log10(func_val_best), group = 'best'), linetype = "dashed", color = "gray") + 
       ggplot2::xlim(0, ifelse(missing(.tupper), NA, .tupper)) +
       ggplot2::ggtitle("Fitness") +
       theme_bw()
@@ -142,14 +143,15 @@ value_plot = function(.data, .tupper=NA) {
 #'
 #' @param .tupper ograniczenie pokazywanych generacji populacji na wykresie :: integer
 
-ratio_plot = function(.data, .tupper=NA) {
+ratio_plot = function(.data, .tupper=NA, .yupper=NA) {
   .data %>% 
     ggplot2::ggplot(aes(x = t)) +
-      ggplot2::geom_line(aes(y = log(ratio))) +
-      ggplot2::geom_point(aes(y = log(ratio))) +
+      ggplot2::geom_line(aes(y = ratio), linetype = "dashed") +
+      ggplot2::geom_point(aes(y = ratio)) +
       ggplot2::facet_wrap(. ~ dim, ncol = 1) + 
-      ggplot2::geom_hline(yintercept = 0, color = "gray") +
+      ggplot2::geom_hline(yintercept = 1, color = "blue") +
       ggplot2::xlim(0, ifelse(missing(.tupper), NA, .tupper)) +
+      ggplot2::ylim(0, ifelse(missing(.yupper), NA, .yupper)) +
       ggplot2::ggtitle("Ratio best vs mean") +
       theme_bw()
 }
@@ -158,7 +160,7 @@ ratio_plot = function(.data, .tupper=NA) {
 sigma_plot = function(.data, .tupper=NA) {
   .data %>% 
     ggplot2::ggplot(aes(x = t)) +
-      ggplot2::geom_line(aes(y = log(sigma_value))) +
+      ggplot2::geom_line(aes(y = log10(sigma_value))) +
       ggplot2::facet_wrap( .~ dim, ncol = 1) + 
       ggplot2::xlim(0, ifelse(missing(.tupper), NA, .tupper)) +
       ggplot2::ggtitle("Sigma") +
