@@ -15,6 +15,11 @@ linear_func = function(.x) {
 }
 
 
+linear_func2 = function(.x) {
+  .x[1]
+}
+
+
 #' Parametr sigma
 #'
 #' @description
@@ -129,10 +134,10 @@ value_plot = function(.data, .tupper=NA) {
   max_value = max(.data$func_val_best, .data$func_val_mean) 
   .data %>% 
     ggplot2::ggplot(aes(x = t)) +
-      ggplot2::geom_point(aes(y = log10(func_val_mean), shape = 'mean'), color = "black") + 
-      ggplot2::geom_line(aes(y = log10(func_val_mean), group = 'mean'), linetype = "dashed", color = "black") + 
-      ggplot2::geom_point(aes(y = log10(func_val_best), shape = 'best'), color = "gray") + 
-      ggplot2::geom_line(aes(y = log10(func_val_best), group = 'best'), linetype = "dashed", color = "gray") + 
+      ggplot2::geom_point(aes(y = (func_val_mean), shape = 'mean'), color = "black") + 
+      ggplot2::geom_line(aes(y = (func_val_mean), color = set), linetype = "dashed") + 
+      ggplot2::geom_point(aes(y = (func_val_best), shape = 'best'), color = "gray") + 
+      ggplot2::geom_line(aes(y = (func_val_best), color = set), linetype = "dashed") + 
       ggplot2::xlim(0, ifelse(missing(.tupper), NA, .tupper)) +
       ggplot2::ggtitle("Fitness") +
       theme_bw()
@@ -161,7 +166,7 @@ sigma_plot = function(.data, .tupper=NA) {
   .data %>% 
     ggplot2::ggplot(aes(x = t)) +
       ggplot2::geom_line(aes(y = log10(sigma_value))) +
-      ggplot2::facet_wrap( .~ dim, ncol = 1) + 
+      ggplot2::facet_wrap( .~ set, ncol = 1) + 
       ggplot2::xlim(0, ifelse(missing(.tupper), NA, .tupper)) +
       ggplot2::ggtitle("Sigma") +
       theme_bw()
@@ -196,5 +201,118 @@ closeness_plot = function(.data, .tupper = NA) {
     ggplot2::xlim(0, ifelse(missing(.tupper), NA, .tupper)) +
     theme_bw()
 }
+
+
+#generate_population = function(.gens, .lambda, .dim, .mean = rep(1, DIM), .seed = 1) {
+  #base::set.seed(.seed)
+  #1:.gens %>%
+    #purrr::map(function(gen) {
+      #matrix(rnorm(.lambda*.dim, mean = .mean), nrow = .dim)
+  #})
+#}
+
+
+generate_population = function(.dim, .func, .method, .lower, .upper, .seed = 1) {
+  population = .method(rep(100, .dim), fn = function(x) .func(x), lower = .lower, upper = .upper) %>%
+    purrr::pluck("diagnostic", "pop")
+  1:dim(population)[3] %>%
+    purrr::map(function(index) {
+      population[,,index]
+    })
+
+}
+
+add_mean = function(.pop) {
+  mean_point =
+    .pop %>% 
+    apply(1, mean)
+  base::cbind(.pop, mean_point)
+}
+
+
+add_median = function(.pop) {
+  median_point =
+    .pop %>% 
+    apply(1, median)
+  base::cbind(.pop, median_point)
+}
+
+add_best = function(.pop) {
+  .pop %>% 
+    purrr::map(function(pop) {
+      best_index = which.min(pop)
+      pop[["best_point"]] = pop[[best_index]]
+      if(pop[["best_point"]] %in% c(pop[["mean_point"]], pop[["median_point"]]))
+        pop
+      else
+        pop[-best_index]
+  })
+}
+add_worst = function(.pop) {
+  .pop %>% 
+    purrr::map(function(pop) {
+      worst_index = which.max(pop)
+      pop[["worst_point"]] = pop[[worst_index]]
+      if(pop[["worst_point"]] %in% c(pop[["mean_point"]], pop[["median_point"]]))
+        pop
+      else
+        pop[-worst_index]
+  })
+}
+
+
+get_indices = function(.pop, .stat) {
+    which(.pop == .pop %>% purrr::pluck(.stat))
+}
+
+get_quantile = function(.pop, .stat) {
+  .pop %>%
+    purrr::map_dbl(function(pop) {
+      pop_ecdf = stats::ecdf(pop)
+      pop_ecdf(pop %>%
+             purrr::pluck(.stat))
+    })
+}
+
+evalutate_pop = function(.pop, .func) {
+  .pop %>%
+    purrr::map(function(pop) {
+      pop %>% 
+        apply(2, .func)
+    })
+}
+
+
+main = function(.dim, .func, .method, .lower, .upper, .rep) {
+  1:.rep %>%
+    purrr::map(function(rep) {
+      random_pop =
+        generate_population(.dim, .func, .method, .lower, .upper) %>%
+        purrr::map(add_mean) %>%
+        purrr::map(add_median)
+
+      eval_pop =
+        random_pop %>%
+        evalutate_pop(.func) %>%
+        add_worst() %>%
+        add_best()
+
+      mean_quantile =
+        eval_pop %>%
+        get_quantile("mean_point")
+
+      median_quantile =
+        eval_pop %>%
+        get_quantile("median_point")
+      list(
+           populations = random_pop,
+           evalutaed = eval_pop,
+           mean_stat = mean_quantile,
+           median_stat = median_quantile,
+           df = tibble::tibble(mean_q = mean_quantile, median_q = median_quantile)
+           )
+    })
+}
+
 
 
