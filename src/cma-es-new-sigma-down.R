@@ -1,5 +1,5 @@
 library(magrittr)
-no_cma_es_sigma_down <- function(par, fn, ..., lower, upper, control=list()) {
+no_cma_es_sigma_down <- function(par, fn, ..., lower, upper, quant_val=0.09, control=list()) {
 
   norm <- function(x)
     drop(sqrt(crossprod(x)))
@@ -29,8 +29,8 @@ no_cma_es_sigma_down <- function(par, fn, ..., lower, upper, control=list()) {
   ## Parameters:
   trace       <- controlParam("trace", FALSE)
   fnscale     <- controlParam("fnscale", 1)
-  stopfitness <- controlParam("stopfitness", -10^-50)
-  maxiter     <- controlParam("maxit", 100000*N)
+  stopfitness <- controlParam("stopfitness", -Inf)
+  maxiter     <- controlParam("maxit", 1000)
   sigma       <- controlParam("sigma", 0.5)
   sc_tolx     <- controlParam("stop.tolx", 1e-12 * sigma) ## Undocumented stop criterion
   keep.best   <- controlParam("keep.best", TRUE)
@@ -162,18 +162,12 @@ no_cma_es_sigma_down <- function(par, fn, ..., lower, upper, control=list()) {
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
     C = C
-    #C <- (1-ccov) * C + ccov * (1/mucov) *
-    #  (pc %o% pc + (1-hsig) * cc*(2-cc) * C) +
-    #    ccov * (1-1/mucov) * BDz %*% diag(weights) %*% t(BDz)
-    
-    ## Adapt step size sigma: old approach
-#    sigma <- sigma * exp((norm(ps)/chiN - 1)*cs/damps)
-
+   
   ## Adapt step size sigma: new approach
     pop_quart = stats::ecdf(arfitness)
     mean_q = pop_quart(eval_mean)
 
-    if(mean_q <= 0.2)
+    if(mean_q < quant_val)
       sigma = sigma*0.83
     else
       sigma = sigma*1.2
@@ -206,11 +200,11 @@ no_cma_es_sigma_down <- function(par, fn, ..., lower, upper, control=list()) {
     }
     
     ## Escape from flat-land:
- #   if (arfitness[1] == arfitness[min(1+floor(lambda/2), 2+ceiling(lambda/4))]) { 
-      #sigma <- sigma * exp(0.2+cs/damps);
-      #if (trace)
-        #message("Flat fitness function. Increasing sigma.")
-    #}
+    if (arfitness[1] == arfitness[min(1+floor(lambda/2), 2+ceiling(lambda/4))]) { 
+      sigma <- sigma * exp(0.2+cs/damps);
+      if (trace)
+        message("Flat fitness function. Increasing sigma.")
+    }
     if (trace)
       message(sprintf("Iteration %i of %i: current fitness %f",
                       iter, maxiter, arfitness[1] * fnscale))
@@ -232,6 +226,7 @@ no_cma_es_sigma_down <- function(par, fn, ..., lower, upper, control=list()) {
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
+              label=paste0("no-cma-es-sigma-quant-", quant_val),
               constr.violations=cviol,
               diagnostic=log
               )

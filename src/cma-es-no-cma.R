@@ -28,8 +28,8 @@ no_cma_es <- function(par, fn, ..., lower, upper, control=list()) {
   ## Parameters:
   trace       <- controlParam("trace", FALSE)
   fnscale     <- controlParam("fnscale", 1)
-  stopfitness <- controlParam("stopfitness", -10^-50)
-  maxiter     <- controlParam("maxit", 100000*N)
+  stopfitness <- controlParam("stopfitness", -Inf)
+  maxiter     <- controlParam("maxit", 1000)
   sigma       <- controlParam("sigma", 0.5)
   sc_tolx     <- controlParam("stop.tolx", 1e-12 * sigma) ## Undocumented stop criterion
   keep.best   <- controlParam("keep.best", TRUE)
@@ -144,7 +144,7 @@ no_cma_es <- function(par, fn, ..., lower, upper, control=list()) {
     zmean <- drop(selz %*% weights)
 
     ## Save selected x value:
-    if (log.pop) pop.log[,,iter] <- arx
+    if (log.pop) pop.log[,,iter] <- vx
     if (log.value) value.log[iter,] <- arfitness[aripop]
 
     ## Cumulation: Update evolutionary paths
@@ -155,10 +155,7 @@ no_cma_es <- function(par, fn, ..., lower, upper, control=list()) {
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
     C = C
-    #C <- (1-ccov) * C + ccov * (1/mucov) *
-      #(pc %o% pc + (1-hsig) * cc*(2-cc) * C) +
-        #ccov * (1-1/mucov) * BDz %*% diag(weights) %*% t(BDz)
-    
+
     ## Adapt step size sigma: old approach
     sigma <- sigma * exp((norm(ps)/chiN - 1)*cs/damps)
 
@@ -216,6 +213,7 @@ no_cma_es <- function(par, fn, ..., lower, upper, control=list()) {
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
+              label="no-cma-es-sigma-csa",
               constr.violations=cviol,
               diagnostic=log
               )
