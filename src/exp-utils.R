@@ -4,7 +4,7 @@ do_experiment = function(.methods, .func, .dim, .x0, ...) {
                  output = 
                    method(rep(.x0, .dim), fn = function(x) .func(x), ...)
                  mean =
-                   output %>% 
+                    output %>% 
                    purrr::pluck("diagnostic", "pop") %>%
                    extract_mean()
                  sigma =
@@ -15,14 +15,11 @@ do_experiment = function(.methods, .func, .dim, .x0, ...) {
                    output %>%
                    purrr::pluck("diagnostic", "pop") %>%
                    extract_best(.func)
-                 par_best = 
-                   output %>%
-                   purrr::pluck("par")
                  label = 
                    output %>%
                    purrr::pluck("label")
                 dataset = 
-                  generate_ds(output, mean, best, sigma, .func, par_best) %>%
+                  generate_ds(output, mean, best, sigma, .func) %>%
                   dplyr::mutate(set = label)
   }) %>%
     purrr::reduce(dplyr::bind_rows)

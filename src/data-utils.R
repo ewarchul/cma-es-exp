@@ -87,8 +87,8 @@ generate_ds = function(.res, .mean, .best, .sigma, .func, ...) {
   dplyr::mutate(
     ratio = func_val_best/func_val_mean,
     mean_best_dist = compute_distance(.mean, .best),
-    best_dist = compute_nearness(.best, ...),
-    mean_dist = compute_nearness(.mean, ...),
+  #  best_dist = compute_nearness(.best, ...),
+  #  mean_dist = compute_nearness(.mean, ...),
     sigma_value = .sigma)
 }
 
