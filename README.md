@@ -22,3 +22,15 @@ Different CMA-ES experiments.
 * stopfitness = $10^{-50}$
 * maxiter = $100000*N$
 * sigma =  0.5
+
+
+## Ref
+
+* A Computationally Efficient Limited Memory CMA-ES for Large Scale Optimization, Ilya Loshchilov, gecco 2014
+
+* Learning probability distributions in continuous evolutionary algorithms – a comparative review 
+
+* A Median Success Rule for Non-Elitist Evolution Strategies: Study of Feasibility,  Ouassim Ait Elhara, Anne Auger, Nikolaus Hansen, gecco 2013
+
+* Improved Step Size Adaptation for the MO-CMA-ES, Thomas Voß, Nikolaus Hansen, Christian Igel, gecco 2010
+
