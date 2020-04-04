@@ -26,11 +26,11 @@ Different CMA-ES experiments.
 
 ## Ref
 
-* A Computationally Efficient Limited Memory CMA-ES for Large Scale Optimization, Ilya Loshchilov, gecco 2014
+[] A Computationally Efficient Limited Memory CMA-ES for Large Scale Optimization, Ilya Loshchilov, gecco 2014
 
-* Learning probability distributions in continuous evolutionary algorithms – a comparative review 
+[] Learning probability distributions in continuous evolutionary algorithms – a comparative review 
 
-* A Median Success Rule for Non-Elitist Evolution Strategies: Study of Feasibility,  Ouassim Ait Elhara, Anne Auger, Nikolaus Hansen, gecco 2013
+[x] A Median Success Rule for Non-Elitist Evolution Strategies: Study of Feasibility,  Ouassim Ait Elhara, Anne Auger, Nikolaus Hansen, gecco 2013
 
-* Improved Step Size Adaptation for the MO-CMA-ES, Thomas Voß, Nikolaus Hansen, Christian Igel, gecco 2010
+[] Improved Step Size Adaptation for the MO-CMA-ES, Thomas Voß, Nikolaus Hansen, Christian Igel, gecco 2010
 
