@@ -1,5 +1,4 @@
-library(magrittr)
-no_cma_es_sigma_down <- function(par, fn, ..., lower, upper, quant_val=0.09, control=list()) {
+no_cma_es <- function(par, fn, ..., lower, upper, control=list()) {
 
   norm <- function(x)
     drop(sqrt(crossprod(x)))
@@ -145,7 +144,7 @@ no_cma_es_sigma_down <- function(par, fn, ..., lower, upper, quant_val=0.09, con
     zmean <- drop(selz %*% weights)
 
     ## Save selected x value:
-    if (log.pop) pop.log[,,iter] <- arx
+    if (log.pop) pop.log[,,iter] <- vx
     if (log.value) value.log[iter,] <- arfitness[aripop]
 
     ## Cumulation: Update evolutionary paths
@@ -153,25 +152,13 @@ no_cma_es_sigma_down <- function(par, fn, ..., lower, upper, quant_val=0.09, con
     hsig <- drop((norm(ps)/sqrt(1-(1-cs)^(2*counteval/lambda))/chiN) < (1.4 + 2/(N+1)))
     pc <- (1-cc)*pc + hsig * sqrt(cc*(2-cc)*mueff) * drop(BD %*% zmean)
 
-
-    ## Mean point:
-
-    mean_point = apply(vx, 1, mean) %>% t() %>% t()
-    eval_mean = apply(mean_point, 2, function(x) fn(x, ...) * fnscale)
-
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
     C = C
-   
-  ## Adapt step size sigma: new approach
-    pop_quart = stats::ecdf(arfitness)
-    mean_q = pop_quart(eval_mean)
 
-    if(mean_q < quant_val)
-      sigma = sigma*0.83
-    else
-      sigma = sigma*1.2
-    
+    ## Adapt step size sigma: old approach
+    sigma <- sigma * exp((norm(ps)/chiN - 1)*cs/damps)
+
     e <- eigen(C, symmetric=TRUE)
     if (log.eigen)
       eigen.log[iter,] <- rev(sort(e$values))
@@ -202,6 +189,7 @@ no_cma_es_sigma_down <- function(par, fn, ..., lower, upper, quant_val=0.09, con
     ## Escape from flat-land:
     if (arfitness[1] == arfitness[min(1+floor(lambda/2), 2+ceiling(lambda/4))]) { 
       sigma <- sigma * exp(0.2+cs/damps);
+      print(":))))))))))))))))))))))))))))")
       if (trace)
         message("Flat fitness function. Increasing sigma.")
     }
@@ -226,7 +214,7 @@ no_cma_es_sigma_down <- function(par, fn, ..., lower, upper, quant_val=0.09, con
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label=paste0("no-cma-es-sigma-quant-", quant_val),
+              label="no-cma-es-sigma-csa",
               constr.violations=cviol,
               diagnostic=log
               )
