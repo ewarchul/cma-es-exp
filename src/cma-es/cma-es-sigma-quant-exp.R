@@ -1,4 +1,5 @@
-no_cma_es <- function(par, fn, ..., lower, upper, control=list()) {
+library(magrittr)
+cma_es_sigma_quant_exp <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = FALSE, control=list()) {
 
   norm <- function(x)
     drop(sqrt(crossprod(x)))
@@ -28,7 +29,7 @@ no_cma_es <- function(par, fn, ..., lower, upper, control=list()) {
   ## Parameters:
   trace       <- controlParam("trace", FALSE)
   fnscale     <- controlParam("fnscale", 1)
-  stopfitness <- controlParam("stopfitness", -Inf)
+  stopfitness <- controlParam("stopfitness", 10^-60)
   maxiter     <- controlParam("maxit", 1000)
   sigma       <- controlParam("sigma", 0.5)
   sc_tolx     <- controlParam("stop.tolx", 1e-12 * sigma) ## Undocumented stop criterion
@@ -144,7 +145,7 @@ no_cma_es <- function(par, fn, ..., lower, upper, control=list()) {
     zmean <- drop(selz %*% weights)
 
     ## Save selected x value:
-    if (log.pop) pop.log[,,iter] <- vx
+    if (log.pop) pop.log[,,iter] <- arx
     if (log.value) value.log[iter,] <- arfitness[aripop]
 
     ## Cumulation: Update evolutionary paths
@@ -152,16 +153,30 @@ no_cma_es <- function(par, fn, ..., lower, upper, control=list()) {
     hsig <- drop((norm(ps)/sqrt(1-(1-cs)^(2*counteval/lambda))/chiN) < (1.4 + 2/(N+1)))
     pc <- (1-cc)*pc + hsig * sqrt(cc*(2-cc)*mueff) * drop(BD %*% zmean)
 
+
+    ## Mean point:
+
+    mean_point = apply(vx, 1, mean) %>% t() %>% t()
+    eval_mean = apply(mean_point, 2, function(x) fn(x, ...) * fnscale)
+
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
-    C <- (1-ccov) * C + ccov * (1/mucov) *
+    if(CMA)
+      C = (1-ccov) * C + ccov * (1/mucov) *
         (pc %o% pc + (1-hsig) * cc*(2-cc) * C) +
         ccov * (1-1/mucov) * BDz %*% diag(weights) %*% t(BDz)
+    else
+      C = C 
 
+  ## Adapt step size sigma: new approach
+    pop_quart = stats::ecdf(arfitness)
+    mean_q = pop_quart(eval_mean)
 
-    ## Adapt step size sigma: old approach
-    sigma <- sigma * exp((norm(ps)/chiN - 1)*cs/damps)
-
+    if(mean_q < quant_val)
+      sigma = sigma*0.83
+    else
+      sigma = sigma*1.2
+    
     e <- eigen(C, symmetric=TRUE)
     if (log.eigen)
       eigen.log[iter,] <- rev(sort(e$values))
@@ -216,7 +231,7 @@ no_cma_es <- function(par, fn, ..., lower, upper, control=list()) {
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="no-cma-es-sigma-csa",
+              label=paste0("cma-es-sigma-quant-exp", quant_val),
               constr.violations=cviol,
               diagnostic=log
               )

@@ -1,6 +1,5 @@
-library(magrittr)
-no_cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, control=list()) {
-
+cma_es_sigma_psr <- function(par, fn, ..., lower, upper, CMA = FALSE, control=list()) {
+  
   norm <- function(x)
     drop(sqrt(crossprod(x)))
   
@@ -58,6 +57,10 @@ no_cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, co
   damps       <- controlParam("damps",
                               1 + 2*max(0, sqrt((mueff-1)/(N+1))-1) + cs)
 
+  c_sigma = 0.3
+  d_sigma = 2*(N-1)/N
+  val_target = 0.25
+
   ## Safety checks:
   stopifnot(length(upper) == N)  
   stopifnot(length(lower) == N)
@@ -95,6 +98,9 @@ no_cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, co
   nm <- names(par) ## Names of parameters
 
   ## Preallocate work arrays:
+  succ_prob = 0
+  pop_prev = matrix(0, nrow = lambda, ncol = 2)
+  s = 0
   arx <- matrix(0.0, nrow=N, ncol=lambda)
   arfitness <- numeric(lambda)
   while (iter < maxiter) {
@@ -138,6 +144,7 @@ no_cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, co
     arindex <- order(arfitness)
     arfitness <- arfitness[arindex]
 
+
     aripop <- arindex[1:mu]
     selx <- arx[,aripop]
     xmean <- drop(selx %*% weights)
@@ -145,7 +152,7 @@ no_cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, co
     zmean <- drop(selz %*% weights)
 
     ## Save selected x value:
-    if (log.pop) pop.log[,,iter] <- arx
+    if (log.pop) pop.log[,,iter] <- vx
     if (log.value) value.log[iter,] <- arfitness[aripop]
 
     ## Cumulation: Update evolutionary paths
@@ -153,22 +160,29 @@ no_cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, co
     hsig <- drop((norm(ps)/sqrt(1-(1-cs)^(2*counteval/lambda))/chiN) < (1.4 + 2/(N+1)))
     pc <- (1-cc)*pc + hsig * sqrt(cc*(2-cc)*mueff) * drop(BD %*% zmean)
 
-
-    ## Mean point:
-
-    mean_point = apply(vx, 1, mean) %>% t() %>% t()
-    eval_mean = apply(mean_point, 2, function(x) fn(x, ...) * fnscale)
-
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
-    C = C 
+    if(CMA)
+      C = (1-ccov) * C + ccov * (1/mucov) *
+        (pc %o% pc + (1-hsig) * cc*(2-cc) * C) +
+        ccov * (1-1/mucov) * BDz %*% diag(weights) %*% t(BDz)
+    else
+      C = C 
 
-  ## Adapt step size sigma: Hansen 1/5th
-    ps = length(which(arfitness < eval_mean))/lambda
+    ## Adapt sigma value 
 
-    sigma = sigma*exp((1/3)*(ps - 0.25)/.75)
+    pop_prev[, mod(iter,2)+1] = arfitness
+    if(iter >= 2) {
+      mixed_pop = c(arfitness, pop_prev[, mod(iter - 1, 2)+1])
+      rank_all = rank(mixed_pop)
+      rank_current = rank_all[1:lambda]/lambda
+      rank_prev = rank_all[-(1:lambda)]/lambda
+      z_psr = sum(rank_current - rank_prev)/lambda - val_target
+      s = (1 - c_sigma)*s + c_sigma*z_psr
+      sigma = sigma*exp(s/d_sigma)
+    }
 
-        
+
     e <- eigen(C, symmetric=TRUE)
     if (log.eigen)
       eigen.log[iter,] <- rev(sort(e$values))
@@ -199,7 +213,6 @@ no_cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, co
     ## Escape from flat-land:
     if (arfitness[1] == arfitness[min(1+floor(lambda/2), 2+ceiling(lambda/4))]) { 
       sigma <- sigma * exp(0.2+cs/damps);
-      print("xDDDDDDDDDDDDDDDD")
       if (trace)
         message("Flat fitness function. Increasing sigma.")
     }
@@ -224,7 +237,7 @@ no_cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, co
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cma-es-sigma-expth",
+              label="cma-es-sigma-psr",
               constr.violations=cviol,
               diagnostic=log
               )

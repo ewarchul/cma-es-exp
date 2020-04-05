@@ -1,4 +1,4 @@
-no_cma_es_onefifth_sigma <- function(par, fn, ..., lower, upper, control=list()) {
+cma_es_sigma_onefifth <- function(par, fn, ..., lower, upper, CMA = FALSE, control=list()) {
   
   norm <- function(x)
     drop(sqrt(crossprod(x)))
@@ -28,7 +28,7 @@ no_cma_es_onefifth_sigma <- function(par, fn, ..., lower, upper, control=list())
   ## Parameters:
   trace       <- controlParam("trace", FALSE)
   fnscale     <- controlParam("fnscale", 1)
-  stopfitness <- controlParam("stopfitness", -Inf)
+  stopfitness <- controlParam("stopfitness", 10^-60)
   maxiter     <- controlParam("maxit", 1000)
   sigma       <- controlParam("sigma", 0.5)
   sc_tolx     <- controlParam("stop.tolx", 1e-12 * sigma) ## Undocumented stop criterion
@@ -157,10 +157,12 @@ no_cma_es_onefifth_sigma <- function(par, fn, ..., lower, upper, control=list())
 
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
-
-    C <- (1-ccov) * C + ccov * (1/mucov) *
-      (pc %o% pc + (1-hsig) * cc*(2-cc) * C) +
-      ccov * (1-1/mucov) * BDz %*% diag(weights) %*% t(BDz)
+    if(CMA)
+      C = (1-ccov) * C + ccov * (1/mucov) *
+        (pc %o% pc + (1-hsig) * cc*(2-cc) * C) +
+        ccov * (1-1/mucov) * BDz %*% diag(weights) %*% t(BDz)
+    else
+      C = C
 
     ## Adapt sigma value with 1/5th rule:
     best_prev[mod(iter, 2) + 1] = arfitness[1]
@@ -226,7 +228,7 @@ no_cma_es_onefifth_sigma <- function(par, fn, ..., lower, upper, control=list())
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="no-cma-es-sigma-1/5th",
+              label="cma-es-sigma-1/5th",
               constr.violations=cviol,
               diagnostic=log
               )

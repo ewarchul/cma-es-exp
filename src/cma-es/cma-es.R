@@ -1,5 +1,5 @@
-no_cma_es_sigma_psr <- function(par, fn, ..., lower, upper, control=list()) {
-  
+cma_es <- function(par, fn, ..., lower, upper, CMA = FALSE, control=list()) {
+
   norm <- function(x)
     drop(sqrt(crossprod(x)))
   
@@ -57,10 +57,6 @@ no_cma_es_sigma_psr <- function(par, fn, ..., lower, upper, control=list()) {
   damps       <- controlParam("damps",
                               1 + 2*max(0, sqrt((mueff-1)/(N+1))-1) + cs)
 
-  c_sigma = 0.3
-  d_sigma = 2*(N-1)/N
-  val_target = 0.25
-
   ## Safety checks:
   stopifnot(length(upper) == N)  
   stopifnot(length(lower) == N)
@@ -98,9 +94,6 @@ no_cma_es_sigma_psr <- function(par, fn, ..., lower, upper, control=list()) {
   nm <- names(par) ## Names of parameters
 
   ## Preallocate work arrays:
-  succ_prob = 0
-  pop_prev = matrix(0, nrow = lambda, ncol = 2)
-  s = 0
   arx <- matrix(0.0, nrow=N, ncol=lambda)
   arfitness <- numeric(lambda)
   while (iter < maxiter) {
@@ -144,7 +137,6 @@ no_cma_es_sigma_psr <- function(par, fn, ..., lower, upper, control=list()) {
     arindex <- order(arfitness)
     arfitness <- arfitness[arindex]
 
-
     aripop <- arindex[1:mu]
     selx <- arx[,aripop]
     xmean <- drop(selx %*% weights)
@@ -162,21 +154,15 @@ no_cma_es_sigma_psr <- function(par, fn, ..., lower, upper, control=list()) {
 
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
-    C = C 
+    if(CMA)
+      C = (1-ccov) * C + ccov * (1/mucov) *
+        (pc %o% pc + (1-hsig) * cc*(2-cc) * C) +
+        ccov * (1-1/mucov) * BDz %*% diag(weights) %*% t(BDz)
+    else
+      C = C
 
-    ## Adapt sigma value 
-
-    pop_prev[, mod(iter,2)+1] = arfitness
-    if(iter >= 2) {
-      mixed_pop = c(arfitness, pop_prev[, mod(iter - 1, 2)+1])
-      rank_all = rank(mixed_pop)
-      rank_current = rank_all[1:lambda]/lambda
-      rank_prev = rank_all[-(1:lambda)]/lambda
-      z_psr = sum(rank_current - rank_prev)/lambda - val_target
-      s = (1 - c_sigma)*s + c_sigma*z_psr
-      sigma = sigma*exp(s/d_sigma)
-    }
-
+    ## Adapt step size sigma: old approach
+    sigma <- sigma * exp((norm(ps)/chiN - 1)*cs/damps)
 
     e <- eigen(C, symmetric=TRUE)
     if (log.eigen)
@@ -208,6 +194,7 @@ no_cma_es_sigma_psr <- function(par, fn, ..., lower, upper, control=list()) {
     ## Escape from flat-land:
     if (arfitness[1] == arfitness[min(1+floor(lambda/2), 2+ceiling(lambda/4))]) { 
       sigma <- sigma * exp(0.2+cs/damps);
+      print(":))))))))))))))))))))))))))))")
       if (trace)
         message("Flat fitness function. Increasing sigma.")
     }
@@ -232,7 +219,7 @@ no_cma_es_sigma_psr <- function(par, fn, ..., lower, upper, control=list()) {
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="no-cma-es-sigma-psr",
+              label="cma-es-sigma-csa",
               constr.violations=cviol,
               diagnostic=log
               )

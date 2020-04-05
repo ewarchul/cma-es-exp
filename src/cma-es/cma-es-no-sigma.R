@@ -1,4 +1,4 @@
-no_cma_es_no_sigma <- function(par, fn, ..., lower, upper, control=list()) {
+cma_es_no_sigma <- function(par, fn, ..., lower, upper, CMA = FALSE, control=list()) {
   
   norm <- function(x)
     drop(sqrt(crossprod(x)))
@@ -28,7 +28,7 @@ no_cma_es_no_sigma <- function(par, fn, ..., lower, upper, control=list()) {
   ## Parameters:
   trace       <- controlParam("trace", FALSE)
   fnscale     <- controlParam("fnscale", 1)
-  stopfitness <- controlParam("stopfitness", -Inf)
+  stopfitness <- controlParam("stopfitness", 10^-60)
   maxiter     <- controlParam("maxit", 1000)
   sigma       <- controlParam("sigma", 0.5)
   sc_tolx     <- controlParam("stop.tolx", 1e-12 * sigma) ## Undocumented stop criterion
@@ -154,9 +154,14 @@ no_cma_es_no_sigma <- function(par, fn, ..., lower, upper, control=list()) {
 
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
-    C <- (1-ccov) * C + ccov * (1/mucov) *
+
+    if(CMA)
+      C = (1-ccov) * C + ccov * (1/mucov) *
         (pc %o% pc + (1-hsig) * cc*(2-cc) * C) +
         ccov * (1-1/mucov) * BDz %*% diag(weights) %*% t(BDz)
+    else
+      C = C
+
     sigma = sigma
 
     e <- eigen(C, symmetric=TRUE)
@@ -213,7 +218,7 @@ no_cma_es_no_sigma <- function(par, fn, ..., lower, upper, control=list()) {
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="no-cma-es-no-sigma",
+              label="cma-es-no-sigma",
               constr.violations=cviol,
               diagnostic=log
               )

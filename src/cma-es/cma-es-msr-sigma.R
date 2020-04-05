@@ -1,5 +1,5 @@
-no_cma_es <- function(par, fn, ..., lower, upper, control=list()) {
-
+cma_es_sigma_msr <- function(par, fn, ..., lower, upper, CMA = FALSE, control=list()) {
+  
   norm <- function(x)
     drop(sqrt(crossprod(x)))
   
@@ -57,6 +57,12 @@ no_cma_es <- function(par, fn, ..., lower, upper, control=list()) {
   damps       <- controlParam("damps",
                               1 + 2*max(0, sqrt((mueff-1)/(N+1))-1) + cs)
 
+  mindex = .3*lambda
+  mindex_f = floor(.3*lambda)
+  mindex_c = ceiling(.3*lambda)
+  c_sigma = .3
+  d_sigma = 2*(N-1)/N
+
   ## Safety checks:
   stopifnot(length(upper) == N)  
   stopifnot(length(lower) == N)
@@ -94,6 +100,9 @@ no_cma_es <- function(par, fn, ..., lower, upper, control=list()) {
   nm <- names(par) ## Names of parameters
 
   ## Preallocate work arrays:
+  succ_prob = 0
+  pop_prev = matrix(0, nrow = lambda, ncol = 2)
+  s = 0
   arx <- matrix(0.0, nrow=N, ncol=lambda)
   arfitness <- numeric(lambda)
   while (iter < maxiter) {
@@ -137,6 +146,7 @@ no_cma_es <- function(par, fn, ..., lower, upper, control=list()) {
     arindex <- order(arfitness)
     arfitness <- arfitness[arindex]
 
+
     aripop <- arindex[1:mu]
     selx <- arx[,aripop]
     xmean <- drop(selx %*% weights)
@@ -154,10 +164,24 @@ no_cma_es <- function(par, fn, ..., lower, upper, control=list()) {
 
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
-    C = C
+    if(CMA)
+      C = (1-ccov) * C + ccov * (1/mucov) *
+        (pc %o% pc + (1-hsig) * cc*(2-cc) * C) +
+        ccov * (1-1/mucov) * BDz %*% diag(weights) %*% t(BDz)
+    else
+      C = C
 
-    ## Adapt step size sigma: old approach
-    sigma <- sigma * exp((norm(ps)/chiN - 1)*cs/damps)
+    ## Adapt sigma value with 1/5th rule:
+    pop_prev[, mod(iter, 2) + 1] = arfitness
+    jpoint = pop_prev[, mod(iter - 1, 2) + 1][mindex]
+   # jpoint_f = pop_prev[, mod(iter - 1, 2) + 1][mindex_f]
+   # jpoint_c = pop_prev[, mod(iter - 1, 2) + 1][mindex_c]
+   # K_succ = (1-abs(mindex_f - mindex))*length(which(arfitness < jpoint_f)) + (1 - abs(mindex_c - mindex))*length(which(arfitness < jpoint_c))
+    K_succ = length(which(arfitness < jpoint)) 
+    z = (2/lambda)*(K_succ - (lambda + 1)/2)
+    s = (1 - c_sigma)*s + c_sigma*z 
+    
+    sigma = sigma*exp(s/d_sigma)
 
     e <- eigen(C, symmetric=TRUE)
     if (log.eigen)
@@ -189,7 +213,6 @@ no_cma_es <- function(par, fn, ..., lower, upper, control=list()) {
     ## Escape from flat-land:
     if (arfitness[1] == arfitness[min(1+floor(lambda/2), 2+ceiling(lambda/4))]) { 
       sigma <- sigma * exp(0.2+cs/damps);
-      print(":))))))))))))))))))))))))))))")
       if (trace)
         message("Flat fitness function. Increasing sigma.")
     }
@@ -214,7 +237,7 @@ no_cma_es <- function(par, fn, ..., lower, upper, control=list()) {
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="no-cma-es-sigma-csa",
+              label="cma-es-sigma-msr",
               constr.violations=cviol,
               diagnostic=log
               )
