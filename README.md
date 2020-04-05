@@ -2,8 +2,7 @@
 
 Different CMA-ES experiments.
 
-[![Travis build status](https://travis-ci.com/github/warbarbye/cma-es-exp.png)](https://travis-ci.com/github/warbarbye/cma-es-exp)
-
+[![Build Status](https://travis-ci.com/warbarbye/cma-es-exp.svg?branch=master)](https://travis-ci.com/warbarbye/cma-es-exp)
 ## Methods
 
 * CMA-ES classic
