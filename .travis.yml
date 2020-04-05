@@ -1,3 +1,6 @@
 language: r
-
+warnings_are_errors: false
 os: linux
+script:
+  - Rscript -e "library(testthat); testthat::test_dir('tests/testthat', reporter = c('progress', 'fail'))"
+
