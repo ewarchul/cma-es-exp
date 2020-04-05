@@ -1,6 +1,7 @@
 library(tidyverse)
 library(magrittr)
-source("../src/cma-es/cma-es-sigma-quant.R")
+source("../../src/cma-es/cma-es-sigma-quant.R")
+source("../../src/data-utils.R")
 
 testthat::test_that("methods extract sigma values from algorithm output", {
       # given
@@ -23,13 +24,13 @@ testthat::test_that("methods extract mean value from random generations", {
       for(rep in 1:50) {
         index = floor(runif(1, 1, 1000))
         mean_expected = 
-          apply(output$population[,,index], 1, mean) 
+          apply(output$diagnostic$pop[,,index], 1, mean)
 
         # when
         mean_output =
-          output %>%
+          output$diagnostic$pop %>%
           extract_mean() %>%
-          dplyr::slice(index)
+          purrr::pluck(index)
 
         # then
         expect_equal(mean_output, mean_expected)
@@ -41,13 +42,14 @@ testthat::test_that("methods extract best value from random generations", {
       output = cma_es_sigma_quant(rep(100, 2), fn = function(x) crossprod(x), lower = -100, upper = 100)
       for(rep in 1:50) {
         index = floor(runif(1, 1, 1000))
-        best_expected = 
+        best_index = 
           which.min(apply(output$diagnostic$pop[,,index], 2, crossprod))
+        best_expected = output$diagnostic$pop[,best_index,index]
       # when
         best_output =
-          output %>%
-          extract_best() %>%
-          dplyr::slice(index)
+          output$diagnostic$pop %>%
+          extract_best(.eval=crossprod) %>%
+          purrr::pluck(index)
       # then
         expect_equal(best_output, best_expected)
       }
