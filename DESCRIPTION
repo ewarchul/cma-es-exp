@@ -8,8 +8,8 @@ Author: Eryk Warchulski [aut]
 Maintainer: Eryk Warchulski <ewarchul@gmail.com>
 Description: cma-es experiments for PPSN-2020
 Depends: R (>= 3.6.2)
-Remotes:
-  tidyverse/tidyverse,
-  tidyverse/magrittr
+Imports:
+  tidyverse,
+  magrittr
 Suggests: 
     testthat
