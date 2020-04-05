@@ -1,4 +1,4 @@
-no_cma_es_onefifth_sigma <- function(par, fn, ..., lower, upper, control=list()) {
+no_cma_es_sigma_onefifth <- function(par, fn, ..., lower, upper, control=list()) {
   
   norm <- function(x)
     drop(sqrt(crossprod(x)))
@@ -28,7 +28,7 @@ no_cma_es_onefifth_sigma <- function(par, fn, ..., lower, upper, control=list())
   ## Parameters:
   trace       <- controlParam("trace", FALSE)
   fnscale     <- controlParam("fnscale", 1)
-  stopfitness <- controlParam("stopfitness", -Inf)
+  stopfitness <- controlParam("stopfitness", 10^-60)
   maxiter     <- controlParam("maxit", 1000)
   sigma       <- controlParam("sigma", 0.5)
   sc_tolx     <- controlParam("stop.tolx", 1e-12 * sigma) ## Undocumented stop criterion

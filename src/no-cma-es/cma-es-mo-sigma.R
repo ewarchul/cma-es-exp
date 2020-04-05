@@ -1,4 +1,4 @@
-no_cma_es_sigma_msr <- function(par, fn, ..., lower, upper, control=list()) {
+no_cma_es_psr_sigma <- function(par, fn, ..., lower, upper, control=list()) {
   
   norm <- function(x)
     drop(sqrt(crossprod(x)))
@@ -28,8 +28,8 @@ no_cma_es_sigma_msr <- function(par, fn, ..., lower, upper, control=list()) {
   ## Parameters:
   trace       <- controlParam("trace", FALSE)
   fnscale     <- controlParam("fnscale", 1)
-  stopfitness <- controlParam("stopfitness", 10^-60)
-  maxiter     <- controlParam("maxit", 1000)
+  stopfitness <- controlParam("stopfitness", -Inf)
+  maxiter     <- controlParam("maxit", 100000)
   sigma       <- controlParam("sigma", 0.5)
   sc_tolx     <- controlParam("stop.tolx", 1e-12 * sigma) ## Undocumented stop criterion
   keep.best   <- controlParam("keep.best", TRUE)
@@ -57,11 +57,9 @@ no_cma_es_sigma_msr <- function(par, fn, ..., lower, upper, control=list()) {
   damps       <- controlParam("damps",
                               1 + 2*max(0, sqrt((mueff-1)/(N+1))-1) + cs)
 
-  mindex = .3*lambda
-  mindex_f = floor(.3*lambda)
-  mindex_c = ceiling(.3*lambda)
-  c_sigma = .3
+  c_sigma = 0.3
   d_sigma = 2*(N-1)/N
+  val_target = 0.25
 
   ## Safety checks:
   stopifnot(length(upper) == N)  
@@ -164,19 +162,21 @@ no_cma_es_sigma_msr <- function(par, fn, ..., lower, upper, control=list()) {
 
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
-    C = C
+    C = C 
 
-    ## Adapt sigma value with 1/5th rule:
-    pop_prev[, mod(iter, 2) + 1] = arfitness
-    jpoint = pop_prev[, mod(iter - 1, 2) + 1][mindex]
-   # jpoint_f = pop_prev[, mod(iter - 1, 2) + 1][mindex_f]
-   # jpoint_c = pop_prev[, mod(iter - 1, 2) + 1][mindex_c]
-   # K_succ = (1-abs(mindex_f - mindex))*length(which(arfitness < jpoint_f)) + (1 - abs(mindex_c - mindex))*length(which(arfitness < jpoint_c))
-    K_succ = length(which(arfitness < jpoint)) 
-    z = (2/lambda)*(K_succ - (lambda + 1)/2)
-    s = (1 - c_sigma)*s + c_sigma*z 
-    
-    sigma = sigma*exp(s/d_sigma)
+    ## Adapt sigma value 
+
+    pop_prev[, mod(iter,2)+1] = arfitness
+    if(iter >= 2) {
+      mixed_pop = c(arfitness, pop_prev[, mod(iter - 1, 2)+1])
+      rank_all = rank(mixed_pop)
+      rank_current = rank_all[1:lambda]/lambda
+      rank_prev = rank_all[-(1:lambda)]/lambda
+      z_psr = sum(rank_current - rank_prev)/lambda - val_target
+      s = (1 - c_sigma)*s + c_sigma*z_psr
+      sigma = sigma*exp(s/d_sigma)
+    }
+
 
     e <- eigen(C, symmetric=TRUE)
     if (log.eigen)
@@ -232,7 +232,7 @@ no_cma_es_sigma_msr <- function(par, fn, ..., lower, upper, control=list()) {
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="no-cma-es-sigma-msr",
+              label="no-cma-es-sigma-mo",
               constr.violations=cviol,
               diagnostic=log
               )

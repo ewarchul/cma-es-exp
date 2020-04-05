@@ -1,5 +1,5 @@
 library(magrittr)
-no_cma_es_sigma_exp <- function(par, fn, ..., lower, upper, quant_val=0.09, control=list()) {
+no_cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, control=list()) {
 
   norm <- function(x)
     drop(sqrt(crossprod(x)))
@@ -29,7 +29,7 @@ no_cma_es_sigma_exp <- function(par, fn, ..., lower, upper, quant_val=0.09, cont
   ## Parameters:
   trace       <- controlParam("trace", FALSE)
   fnscale     <- controlParam("fnscale", 1)
-  stopfitness <- controlParam("stopfitness", -Inf)
+  stopfitness <- controlParam("stopfitness", 10^-60)
   maxiter     <- controlParam("maxit", 1000)
   sigma       <- controlParam("sigma", 0.5)
   sc_tolx     <- controlParam("stop.tolx", 1e-12 * sigma) ## Undocumented stop criterion
@@ -224,7 +224,7 @@ no_cma_es_sigma_exp <- function(par, fn, ..., lower, upper, quant_val=0.09, cont
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cma-es-sigma-1/5exp",
+              label="cma-es-sigma-expth",
               constr.violations=cviol,
               diagnostic=log
               )
