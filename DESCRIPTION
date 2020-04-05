@@ -9,7 +9,7 @@ Maintainer: Eryk Warchulski <ewarchul@gmail.com>
 Description: cma-es experiments for PPSN-2020
 Depends: R (>= 3.6.2)
 Remotes:
-  tidyverse,
-  magrittr
+  tidyverse/tidyverse,
+  tidyverse/magrittr
 Suggests: 
     testthat
