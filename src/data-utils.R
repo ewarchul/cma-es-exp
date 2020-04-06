@@ -3,8 +3,8 @@
 #' @description
 #' Funkcja ekstrahuje parametr sigma
 
-extract_sigma = function(.result) {
-   .result$diagnostic$sigma 
+extract_sigma = function(.diag) {
+   .diag$sigma 
   }
 
 #' Punkt środkowy populacji
