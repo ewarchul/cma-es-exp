@@ -1,5 +1,5 @@
 library(magrittr)
-no_cma_es_sigma_down <- function(par, fn, ..., lower, upper, quant_val=0.09, control=list()) {
+cma_es_sigma_JA <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = FALSE, control=list()) {
 
   norm <- function(x)
     drop(sqrt(crossprod(x)))
@@ -159,31 +159,24 @@ no_cma_es_sigma_down <- function(par, fn, ..., lower, upper, quant_val=0.09, con
 
     ## Mean point:
 
-#    mean_point = apply(vx, 1, mean) %>% t() %>% t()
-#    eval_mean = apply(mean_point, 2, function(x) fn(x, ...) * fnscale)
-
-####JA:
     eval_xmeanOld <- apply(xmeanOld, 2, function(x) fn(x, ...) * fnscale)
-####:JA
 
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
-    C = C
+    if(CMA)
+      C = (1-ccov) * C + ccov * (1/mucov) *
+        (pc %o% pc + (1-hsig) * cc*(2-cc) * C) +
+        ccov * (1-1/mucov) * BDz %*% diag(weights) %*% t(BDz)
+    else
+      C = C
    
   ## Adapt step size sigma: new approach
     pop_quart = stats::ecdf(arfitness)
-#    mean_q = pop_quart(eval_mean)
-####JA:    
     pTarget<-1/5
     ps<-pop_quart(eval_xmeanOld)
     sigmaMultExp<-(ps-pTarget)/(1-pTarget)
     sigma<-sigma*exp(1/3*sigmaMultExp)
-####:JA
 
-#    if(mean_q < quant_val)
-#      sigma = sigma*0.83
-#    else
-#      sigma = sigma*1.2
     
     e <- eigen(C, symmetric=TRUE)
     if (log.eigen)
@@ -239,7 +232,7 @@ no_cma_es_sigma_down <- function(par, fn, ..., lower, upper, quant_val=0.09, con
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label=paste0("no-cma-es-sigma-quant-", quant_val),
+              label=paste0("cma-es-sigma-JA-quant-", quant_val),
               constr.violations=cviol,
               diagnostic=log
               )
