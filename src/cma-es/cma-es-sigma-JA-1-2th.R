@@ -1,5 +1,6 @@
-cma_es_no_sigma <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = FALSE, control=list()) {
-  
+library(magrittr)
+cma_es_sigma_JA_half <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = FALSE,  control=list()) {
+
   norm <- function(x)
     drop(sqrt(crossprod(x)))
   
@@ -28,7 +29,7 @@ cma_es_no_sigma <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = FA
   ## Parameters:
   trace       <- controlParam("trace", FALSE)
   fnscale     <- controlParam("fnscale", 1)
-  stopfitness <- controlParam("stopfitness", 10^-60)
+  stopfitness <- controlParam("stopfitness", -Inf)
   maxiter     <- controlParam("maxit", 1000)
   sigma       <- controlParam("sigma", 0.5)
   sc_tolx     <- controlParam("stop.tolx", 1e-12 * sigma) ## Undocumented stop criterion
@@ -56,6 +57,7 @@ cma_es_no_sigma <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = FA
                               + (1-1/mucov) * ((2*mucov-1)/((N+2)^2+2*mucov)))
   damps       <- controlParam("damps",
                               1 + 2*max(0, sqrt((mueff-1)/(N+1))-1) + cs)
+  sigma_denom = controlParam("sigma_denom", 1/2)
 
   ## Safety checks:
   stopifnot(length(upper) == N)  
@@ -139,12 +141,15 @@ cma_es_no_sigma <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = FA
 
     aripop <- arindex[1:mu]
     selx <- arx[,aripop]
+####JA:
+    xmeanOld<-xmean %>% t() %>% t()
+####:JA
     xmean <- drop(selx %*% weights)
     selz <- arz[,aripop]
     zmean <- drop(selz %*% weights)
 
     ## Save selected x value:
-    if (log.pop) pop.log[,,iter] <- vx
+    if (log.pop) pop.log[,,iter] <- arx
     if (log.value) value.log[iter,] <- arfitness[aripop]
 
     ## Cumulation: Update evolutionary paths
@@ -152,18 +157,27 @@ cma_es_no_sigma <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = FA
     hsig <- drop((norm(ps)/sqrt(1-(1-cs)^(2*counteval/lambda))/chiN) < (1.4 + 2/(N+1)))
     pc <- (1-cc)*pc + hsig * sqrt(cc*(2-cc)*mueff) * drop(BD %*% zmean)
 
+
+    ## Mean point:
+    eval_xmeanOld <- apply(xmeanOld, 2, function(x) fn(x, ...) * fnscale)
+
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
-
     if(CMA)
       C = (1-ccov) * C + ccov * (1/mucov) *
         (pc %o% pc + (1-hsig) * cc*(2-cc) * C) +
         ccov * (1-1/mucov) * BDz %*% diag(weights) %*% t(BDz)
     else
       C = C
+   
+  ## Adapt step size sigma: new approach
+    pop_quart = stats::ecdf(arfitness)
+    pTarget<-1/5
+    ps<-pop_quart(eval_xmeanOld)
+    sigmaMultExp<-(ps-pTarget)/(1-pTarget)
+    sigma<-sigma*exp(sigma_denom*sigmaMultExp)
 
-    sigma = sigma
-
+    
     e <- eigen(C, symmetric=TRUE)
     if (log.eigen)
       eigen.log[iter,] <- rev(sort(e$values))
@@ -218,7 +232,7 @@ cma_es_no_sigma <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = FA
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cma-es-no-sigma",
+              label=paste0("cma-es-sigma-JA-quant-", quant_val, "-denom-", round(sigma_denom, 2)),
               constr.violations=cviol,
               diagnostic=log
               )

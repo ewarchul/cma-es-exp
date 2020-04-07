@@ -57,6 +57,7 @@ cma_es_sigma_JA <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = FA
                               + (1-1/mucov) * ((2*mucov-1)/((N+2)^2+2*mucov)))
   damps       <- controlParam("damps",
                               1 + 2*max(0, sqrt((mueff-1)/(N+1))-1) + cs)
+  sigma_denom = controlParam("sigma_denom", 1/3)
 
   ## Safety checks:
   stopifnot(length(upper) == N)  
@@ -174,7 +175,7 @@ cma_es_sigma_JA <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = FA
     pTarget<-1/5
     ps<-pop_quart(eval_xmeanOld)
     sigmaMultExp<-(ps-pTarget)/(1-pTarget)
-    sigma<-sigma*exp(1/3*sigmaMultExp)
+    sigma<-sigma*exp(sigma_denom*sigmaMultExp)
 
     
     e <- eigen(C, symmetric=TRUE)
@@ -231,7 +232,7 @@ cma_es_sigma_JA <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = FA
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label=paste0("cma-es-sigma-JA-quant-", quant_val),
+              label=paste0("cma-es-sigma-JA-quant-", quant_val, "-denom-", round(sigma_denom, 2)),
               constr.violations=cviol,
               diagnostic=log
               )
