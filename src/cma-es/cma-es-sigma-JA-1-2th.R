@@ -174,7 +174,7 @@ cma_es_sigma_JA_half <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA
     pop_quart = stats::ecdf(arfitness)
     pTarget<-1/5
     ps<-pop_quart(eval_xmeanOld)
-    sigmaMultExp<-(ps-pTarget)/(1-pTarget)
+    sigmaMultExp<-(ps-pTarget)/(0.5-pTarget)
     sigma<-sigma*exp(sigma_denom*sigmaMultExp)
 
     

@@ -28,8 +28,8 @@ cma_es_sigma_msr <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = F
   ## Parameters:
   trace       <- controlParam("trace", FALSE)
   fnscale     <- controlParam("fnscale", 1)
-  stopfitness <- controlParam("stopfitness", 10^-60)
-  maxiter     <- controlParam("maxit", 1000)
+  stopfitness <- controlParam("stopfitness", -Inf)
+  maxiter     <- controlParam("maxit", 100*N^2)
   sigma       <- controlParam("sigma", 0.5)
   sc_tolx     <- controlParam("stop.tolx", 1e-12 * sigma) ## Undocumented stop criterion
   keep.best   <- controlParam("keep.best", TRUE)
@@ -124,7 +124,6 @@ cma_es_sigma_msr <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = F
     pen <- 1 + colSums((arx - vx)^2)
     pen[!is.finite(pen)] <- .Machine$double.xmax / 2
     cviol <- cviol + sum(pen > 1)
-
     if (vectorized) {
       y <- fn(vx, ...) * fnscale
     } else {

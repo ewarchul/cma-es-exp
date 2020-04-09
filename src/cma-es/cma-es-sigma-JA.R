@@ -30,7 +30,7 @@ cma_es_sigma_JA <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = FA
   trace       <- controlParam("trace", FALSE)
   fnscale     <- controlParam("fnscale", 1)
   stopfitness <- controlParam("stopfitness", -Inf)
-  maxiter     <- controlParam("maxit", 1000)
+  maxiter     <- controlParam("maxit", 100*N^2)
   sigma       <- controlParam("sigma", 0.5)
   sc_tolx     <- controlParam("stop.tolx", 1e-12 * sigma) ## Undocumented stop criterion
   keep.best   <- controlParam("keep.best", TRUE)
@@ -117,7 +117,6 @@ cma_es_sigma_JA <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = FA
     pen <- 1 + colSums((arx - vx)^2)
     pen[!is.finite(pen)] <- .Machine$double.xmax / 2
     cviol <- cviol + sum(pen > 1)
-
     if (vectorized) {
       y <- fn(vx, ...) * fnscale
     } else {
@@ -138,16 +137,14 @@ cma_es_sigma_JA <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = FA
     ## Order fitness:
     arindex <- order(arfitness)
     arfitness <- arfitness[arindex]
-
     aripop <- arindex[1:mu]
     selx <- arx[,aripop]
 ####JA:
-    xmeanOld<-xmean %>% t() %>% t()
+    xmeanOld<-xmean 
 ####:JA
     xmean <- drop(selx %*% weights)
     selz <- arz[,aripop]
     zmean <- drop(selz %*% weights)
-
     ## Save selected x value:
     if (log.pop) pop.log[,,iter] <- arx
     if (log.value) value.log[iter,] <- arfitness[aripop]
@@ -159,8 +156,7 @@ cma_es_sigma_JA <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = FA
 
 
     ## Mean point:
-    eval_xmeanOld <- apply(xmeanOld, 2, function(x) fn(x, ...) * fnscale)
-
+    eval_xmeanOld <- apply(t(xmeanOld), 1, function(x) fn(x, ...) * fnscale)
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
     if(CMA)
@@ -169,13 +165,13 @@ cma_es_sigma_JA <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = FA
         ccov * (1-1/mucov) * BDz %*% diag(weights) %*% t(BDz)
     else
       C = C
-   
   ## Adapt step size sigma: new approach
     pop_quart = stats::ecdf(arfitness)
     pTarget<-1/5
     ps<-pop_quart(eval_xmeanOld)
     sigmaMultExp<-(ps-pTarget)/(1-pTarget)
     sigma<-sigma*exp(sigma_denom*sigmaMultExp)
+    
 
     
     e <- eigen(C, symmetric=TRUE)

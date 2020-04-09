@@ -29,8 +29,8 @@ cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
   ## Parameters:
   trace       <- controlParam("trace", FALSE)
   fnscale     <- controlParam("fnscale", 1)
-  stopfitness <- controlParam("stopfitness", 10^-60)
-  maxiter     <- controlParam("maxit", 1000)
+  stopfitness <- controlParam("stopfitness", -Inf)
+  maxiter     <- controlParam("maxit", 100*N^2)
   sigma       <- controlParam("sigma", 0.5)
   sc_tolx     <- controlParam("stop.tolx", 1e-12 * sigma) ## Undocumented stop criterion
   keep.best   <- controlParam("keep.best", TRUE)
@@ -159,6 +159,7 @@ cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
     mean_point = apply(vx, 1, mean) %>% t() %>% t()
     eval_mean = apply(mean_point, 2, function(x) fn(x, ...) * fnscale)
 
+
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
     if(CMA)
@@ -208,7 +209,6 @@ cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
     ## Escape from flat-land:
     if (arfitness[1] == arfitness[min(1+floor(lambda/2), 2+ceiling(lambda/4))]) { 
       sigma <- sigma * exp(0.2+cs/damps);
-      print("xDDDDDDDDDDDDDDDD")
       if (trace)
         message("Flat fitness function. Increasing sigma.")
     }

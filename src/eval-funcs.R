@@ -1,3 +1,5 @@
+library(cec2013)
+
 #' Funkcja sferyczna CEC13
 
 sphereCEC_func = function(.mx) {
@@ -22,4 +24,15 @@ linear_func = function(.x) {
   .x[1]
 }
 
-
+cecf_3 = function(.x) {
+    cec2013::cec2013(3, .x)
+}
+cecf_15 = function(.x) {
+    cec2013::cec2013(15, .x)
+}
+cecf_17 = function(.x) {
+    cec2013::cec2013(17, .x)
+}
+cecf_25 = function(.x) {
+    cec2013::cec2013(25, .x)
+}

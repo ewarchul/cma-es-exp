@@ -11,14 +11,14 @@ gen_amount =
 value_plot = function(.data, .tupper=NA, .f=base::identity) {
   max_value = max(.data$func_val_best, .data$func_val_mean) 
   .data %>% 
-    ggplot2::ggplot(aes(x = t)) +
+    ggplot2::ggplot(aes(x = t)) + scale_colour_brewer(palette="Dark2") +
     #  ggplot2::geom_point(aes(y = .f(func_val_mean), shape = 'mean', color = set)) + 
    #   ggplot2::geom_line(aes(y = .f(func_val_mean), color = set), linetype = "dashed") + 
-      ggplot2::geom_point(aes(y = .f(func_val_best), shape = 'best', color = set)) + 
-     ggplot2::geom_line(aes(y = .f(func_val_best), color = set), linetype = "dashed") + 
+      ggplot2::geom_point(aes(y = .f(func_val_best), shape = set, color = set)) + 
+      ggplot2::geom_line(aes(y = .f(func_val_best), color = set), linetype = "dashed") + 
       ggplot2::xlim(0, ifelse(missing(.tupper), NA, .tupper)) +
       ggplot2::ggtitle("Fitness") +
-      theme_bw()
+      theme_bw() 
 }
 
 #' Ratio mean vs best
