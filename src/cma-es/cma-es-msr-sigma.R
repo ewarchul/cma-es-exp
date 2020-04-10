@@ -46,7 +46,7 @@ cma_es_sigma_msr <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = T
 
   ## Strategy parameter setting (defaults as recommended by Nicolas Hansen):
   lambda      <- controlParam("lambda", 4*N)
-  budget      <- controlParam("budget", 10000*N ) 
+  maxiter     <- controlParam("maxit", round(budget/lambda))
   mu          <- controlParam("mu", floor(lambda/2))
   weights     <- controlParam("weights", log(mu+1) - log(1:mu))
   weights     <- weights/sum(weights)
