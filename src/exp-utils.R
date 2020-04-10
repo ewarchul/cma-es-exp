@@ -18,9 +18,9 @@ do_experiment = function(.methods, .func, .dim, .x0, ...) {
                  label = 
                    output %>%
                    purrr::pluck("label")
-                dataset = 
-                  generate_ds(output, mean, best, sigma, .func) %>%
-                  dplyr::mutate(set = label)
+                 dataset = 
+                   generate_ds(output, mean, best, sigma, .func) %>%
+                   dplyr::mutate(set = label)
   }) %>%
     purrr::reduce(dplyr::bind_rows)
 }

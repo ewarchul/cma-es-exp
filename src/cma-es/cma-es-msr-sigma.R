@@ -1,4 +1,4 @@
-cma_es_sigma_msr <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = FALSE, control=list()) {
+cma_es_sigma_msr <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = TRUE, control=list()) {
   
   norm <- function(x)
     drop(sqrt(crossprod(x)))
@@ -29,7 +29,7 @@ cma_es_sigma_msr <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = F
   trace       <- controlParam("trace", FALSE)
   fnscale     <- controlParam("fnscale", 1)
   stopfitness <- controlParam("stopfitness", -Inf)
-  maxiter     <- controlParam("maxit", 100*N^2)
+  budget      <- controlParam("budget", 10000*N)
   sigma       <- controlParam("sigma", 0.5)
   sc_tolx     <- controlParam("stop.tolx", 1e-12 * sigma) ## Undocumented stop criterion
   keep.best   <- controlParam("keep.best", TRUE)
@@ -41,9 +41,12 @@ cma_es_sigma_msr <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = F
   log.eigen  <- controlParam("diag.eigen", log.all)
   log.value  <- controlParam("diag.value", log.all)
   log.pop    <- controlParam("diag.pop", log.all)
+  log.bestVal<- controlParam("diag.bestVal", log.all)
+
 
   ## Strategy parameter setting (defaults as recommended by Nicolas Hansen):
   lambda      <- controlParam("lambda", 4*N)
+  budget      <- controlParam("budget", 10000*N ) 
   mu          <- controlParam("mu", floor(lambda/2))
   weights     <- controlParam("weights", log(mu+1) - log(1:mu))
   weights     <- weights/sum(weights)
@@ -82,6 +85,8 @@ cma_es_sigma_msr <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = F
     value.log <- matrix(0, nrow=maxiter, ncol=mu)
   if (log.pop)
     pop.log <- array(0, c(N, lambda, maxiter))
+  if(log.bestVal)
+	 bestVal.log <-  matrix(0, nrow=0, ncol=1)
   
   ## Initialize dynamic (internal) strategy parameters and constants
   pc <- rep(0.0, N)
@@ -105,7 +110,8 @@ cma_es_sigma_msr <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = F
   s = 0
   arx <- matrix(0.0, nrow=N, ncol=lambda)
   arfitness <- numeric(lambda)
-  while (iter < maxiter) {
+  counteval = counteval + lambda
+  while (counteval < budget) {
     iter <- iter + 1L
 
     if (!keep.best) {
@@ -114,6 +120,9 @@ cma_es_sigma_msr <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = F
     }
     if (log.sigma)
       sigma.log[iter] <- sigma
+    
+    if (log.bestVal) 
+	          bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness)))
 
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
@@ -228,6 +237,7 @@ cma_es_sigma_msr <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = F
   if (log.sigma) log$sigma <- sigma.log[1:iter]
   if (log.eigen) log$eigen <- eigen.log[1:iter,]
   if (log.pop)   log$pop   <- pop.log[,,1:iter]
+   if (log.bestVal) log$bestVal <- bestVal.log
 
   ## Drop names from value object
   names(best.fit) <- NULL
