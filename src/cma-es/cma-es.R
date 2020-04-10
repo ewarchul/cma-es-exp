@@ -1,4 +1,4 @@
-cma_es <- function(par, fn, ..., lower, upper, CMA = FALSE, control=list()) {
+cma_es <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
 
   norm <- function(x)
     drop(sqrt(crossprod(x)))
@@ -41,6 +41,7 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = FALSE, control=list()) {
   log.eigen  <- controlParam("diag.eigen", log.all)
   log.value  <- controlParam("diag.value", log.all)
   log.pop    <- controlParam("diag.pop", log.all)
+  log.bestVal<- controlParam("diag.bestVal", log.all)
 
   ## Strategy parameter setting (defaults as recommended by Nicolas Hansen):
   lambda      <- controlParam("lambda", 4*N)
@@ -76,6 +77,8 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = FALSE, control=list()) {
     value.log <- matrix(0, nrow=maxiter, ncol=mu)
   if (log.pop)
     pop.log <- array(0, c(N, lambda, maxiter))
+  if(log.bestVal)
+    bestVal.log <-  matrix(0, nrow=0, ncol=1)
   
   ## Initialize dynamic (internal) strategy parameters and constants
   pc <- rep(0.0, N)
@@ -105,6 +108,9 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = FALSE, control=list()) {
     }
     if (log.sigma)
       sigma.log[iter] <- sigma
+
+    if (log.bestVal) 
+      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness)))
 
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
@@ -209,6 +215,7 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = FALSE, control=list()) {
   if (log.sigma) log$sigma <- sigma.log[1:iter]
   if (log.eigen) log$eigen <- eigen.log[1:iter,]
   if (log.pop)   log$pop   <- pop.log[,,1:iter]
+  if (log.bestVal) log$bestVal <- bestVal.log
 
   ## Drop names from value object
   names(best.fit) <- NULL
