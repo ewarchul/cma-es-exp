@@ -1,43 +1,71 @@
 library(tidyverse)
-ecdf_plot <- function(n, f_from, f_to) {
-  N       <- n
-  F_from  <- f_from
-  F_to    <- f_to
-  print(paste("Dimension: ",n,sep=''))
-  cmaes_path = "../data/M/"
-  ecdfValues <- list()
-  budgetSteps <- seq(0.01, 1, 0.01)*log10(10000)
-  ecdfMaxSucess <- 0
-  results <- list()
-  for(p in c(1:14, 16:28)){
-    print(p)
-    results[[p]] = read.table(file = paste0(cmaes_path, "cma-es-sigma-csa-", p, "-", N, ".txt"), sep = ",")
-    ecdfValues[[p]] <- rev(c(1 %o% (10)^(0.2*((log10(max(min(
-                                                        #min(resultsDES[[p]][14,]),
-                                                      #  min(resultsRB_IPOP_CMA_ES[[p]][14,]),
-                                                        min(results[[p]][100,])
-                                                        #min(resulsMOSSOCO2011[[p]][14,])
-                                                            ),10^-8)  )/0.2):(log10(max(
-                                                                 #max(resultsDES[[p]][1,]),
-                                                                 #max(resulsMOSCEC2013[[p]][1,]),
-                                                                 max(results[[p]][1,])
-                                                                 ))/0.2))))) 
+library(furrr)
+get_result = function(.probnum, .methods, .dim) {
+   results = 
+    .methods %>%
+    purrr::map(function(method) {
+                 read.table(file = paste0("../data/M/", method, "-", .probnum, "-", .dim, ".txt"), sep = ",")
+      }) %>% purrr::set_names(.methods)
+}
+ecdf_leval = function(.result, .maxb, .eps) {
+  lhs = 
+    .result %>%
+    purrr::map_dbl(function(method) {
+        min(method[.maxb,])
+      }) %>%
+    min() %>%
+    max(., .eps)
+  lhs_log = 
+    lhs %>% 
+    log10() %>%
+    `/`(0.2)
+  lhs_log
+}
+ecdf_reval = function(.result, .minb) {
+  rhs = 
+    .result %>%
+    purrr::map_dbl(function(method) {
+        max(method[.minb,])
+    }) %>%
+    max()
+  rhs_log = 
+    rhs %>% 
+    log10() %>%
+    `/`(0.2)
+  rhs_log
+}
+get_ecdf = function(.result, .maxb = 100, .minb = 1, .eps = 10^-8) {
+  lseq = ecdf_leval(.result, .maxb, .eps)
+  rseq = ecdf_reval(.result, .minb)
+  rev(c(1 %o% (10)^(0.2*lseq:rseq)))
+}
+
+#' ugly af and needs refactoring
+
+get_mincnt = function(.methods, .results, .ecdf, .probnums, .bsteps, .rep) {
+  .methods %>%
+    furrr::future_map(function(met) {
+      min_cnt = rep(0,length(.bsteps))
+      for(problem in .probnums) {
+        for(bstep in 1:length(.bsteps)) {
+          for(estep in 1:length(.ecdf[[problem]])) {
+            min_cnt[bstep] = min_cnt[bstep] + sum(.results[[problem]][[met]][bstep, ] < .ecdf[[problem]][estep])
+          }
+        }
       }
+      min_cnt
+    }) %>%
+    purrr::set_names(.methods) %>%
+    tibble::as_tibble()
+}
 
-  minCount <- rep(0,length(budgetSteps))
-
-  for(p in F_from:F_to){
-    print(paste("Calculating for function: ",p))
-    for(b in 1:length(budgetSteps))
-      for(e in 1:length(ecdfValues[[p]]))
-        minCount[b] <- minCount[b] + sum(results[[p]][b,]<ecdfValues[[p]][e])
-    ecdfMaxSucess <- ecdfMaxSucess + length(ecdfValues[[p]])*30
-  }
-  # All single plot
-  isYaxt <- "s"
-  isXaxt <- "s"
-  #setEPS()
- # postscript( paste("Problems",F_from,"-",F_to,",N=",N,".eps",sep=""), width = 15, height = 15)
-                                              #xlab="log10 of (f-evals / dimension)",ylab="Proportion of function + target pairs",
-  plot(budgetSteps,minCount/(ecdfMaxSucess), xlab="log10 of (f-evals / dimension)", ylab="Proportion of function + target pairs", ylim=c(0, 1), type="b", lwd=2, lty=4, col="black", pch=1, xaxt=isXaxt,  yaxt=isYaxt, cex.axis=1.5)
+generate_df <- function(.dim, .methods, .probnums, .rep = 30, .bsteps = seq(0.01, 1, 0.01)*log10(10000)) {
+  results = 
+    .probnums %>%
+    purrr::map(get_result, .methods, .dim) 
+  ecdf_vals = 
+    results %>%
+    purrr::map(get_ecdf)
+  min_cnts = 
+    get_mincnt(.methods, results, ecdf_vals, .probnums, .bsteps, .rep)
 }
