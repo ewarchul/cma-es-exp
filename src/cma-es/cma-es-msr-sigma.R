@@ -108,8 +108,8 @@ cma_es_sigma_msr <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = T
   succ_prob = 0
   pop_prev = matrix(0, nrow = lambda, ncol = 2)
   s = 0
-  arx <- matrix(0.0, nrow=N, ncol=lambda)
-  arfitness <- numeric(lambda)
+  arx <-  replicate(lambda, runif(N,0,3))
+  arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
   counteval = counteval + lambda
   while (counteval < budget) {
     iter <- iter + 1L

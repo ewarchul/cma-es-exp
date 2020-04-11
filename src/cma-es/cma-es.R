@@ -98,8 +98,8 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
   nm <- names(par) ## Names of parameters
 
   ## Preallocate work arrays:
-  arx <- matrix(0.0, nrow=N, ncol=lambda)
-  arfitness <- numeric(lambda)
+  arx <-  replicate(lambda, runif(N,0,3))
+  arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
   counteval = counteval + lambda
   while (counteval < budget) {
     iter <- iter + 1L
