@@ -27,7 +27,7 @@ benchmark_parallel <- function(.method, .probnum, .dims, .rep, .cpupc = .75) {
 			  result <- tryCatch({
 					.method(
 						rep(0,d),
-						fn = function(x) cec2017::cec2017(n, x),
+						fn = function(x) cec2017(n, x),
 						lower = -100,
 						upper = 100
 					)}, error = 
@@ -46,7 +46,7 @@ benchmark_parallel <- function(.method, .probnum, .dims, .rep, .cpupc = .75) {
       }
       write.table(resultVector, file = paste("../data/N/N", n, "D", d, result$label, sep="-"), sep = ",")
       write.table(informMatrix, file = paste("../data/M/", result$label, "-", n, "-", d, ".txt", sep=""), sep = ",", col.names = F, row.names = F)
-      return(paste(paste("CEC2013 N=",n," D=",d,sep=""),median(resultVector), min(resultVector), max(resultVector), mean(resultVector),sd(resultVector), mean(resets), sep=","))
+      return(paste(paste("CEC2017 N=",n," D=",d,sep=""),median(resultVector), min(resultVector), max(resultVector), mean(resultVector),sd(resultVector), mean(resets), sep=","))
     }
     print(results, quote=FALSE)
     
