@@ -14,7 +14,7 @@ benchmark_parallel(
                   .probnum = PROBLEMS,
                   .dims = DIMS,
                   .rep = REP,
-        .cpupc = CPUPC
+		  .cpupc = CPUPC
                   )
 
 ## CMA-ES-SIGMA-QUANT
