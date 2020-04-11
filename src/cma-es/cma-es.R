@@ -1,4 +1,5 @@
 cma_es <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
+
   norm <- function(x)
     drop(sqrt(crossprod(x)))
   
