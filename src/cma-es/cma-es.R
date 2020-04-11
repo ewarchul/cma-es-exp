@@ -36,7 +36,7 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
   vectorized  <- controlParam("vectorized", FALSE)
   
   ## Logging options:
-  log.all    <- controlParam("diag", FALSE)
+  log.all    <- controlParam("diag", TRUE)
   log.sigma  <- controlParam("diag.sigma", log.all)
   log.eigen  <- controlParam("diag.eigen", log.all)
   log.value  <- controlParam("diag.value", log.all)
