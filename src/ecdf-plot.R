@@ -5,7 +5,7 @@ get_result = function(.probnum, .methods, .dim) {
    results = 
     .methods %>%
     purrr::map(function(method) {
-                 read.table(file = paste0("../data/M/", method, "-", .probnum, "-", .dim, ".txt"), sep = ",")
+                 read.table(file = paste0("../data/cec17/M/", method, "-", .probnum, "-", .dim, ".txt"), sep = ",")
       }) %>% purrr::set_names(.methods)
 }
 
@@ -38,7 +38,7 @@ ecdf_reval = function(.result, .minb) {
   rhs_log
 }
 
-get_ecdf = function(.result, .maxb = 100, .minb = 1, .eps = 10^-8) {
+get_ecdf = function(.result, .maxb = 14, .minb = 1, .eps = 10^-8) {
   lseq = ecdf_leval(.result, .maxb, .eps)
   rseq = ecdf_reval(.result, .minb)
   rev(c(1 %o% (10)^(0.2*lseq:rseq)))
@@ -47,6 +47,7 @@ get_ecdf = function(.result, .maxb = 100, .minb = 1, .eps = 10^-8) {
 #' ugly af and needs refactoring
 
 get_mincnt = function(.methods, .results, .ecdf, .probnums, .bsteps, .rep, .max_succ) {
+  print(.max_succ)
   future::plan(multiprocess)
   .methods %>%
     furrr::future_map(function(met) {
@@ -80,7 +81,7 @@ get_ms = function(.ecdf, .rep) {
 
 }
 
-generate_df = function(.dim, .methods, .probnums, .rep = 30, .bsteps = seq(0.01, 1, 0.01)*log10(10000)) {
+generate_df = function(.dim, .methods, .probnums, .rep = 30, .bsteps = c(0.01, 0.02, 0.03, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0)*log10(10000)) {
   results = 
     .probnums %>%
     purrr::map(get_result, .methods, .dim) 
@@ -90,7 +91,9 @@ generate_df = function(.dim, .methods, .probnums, .rep = 30, .bsteps = seq(0.01,
   ecdf_ms = 
     ecdf_vals %>% 
     get_ms(.rep)
-  get_mincnt(.methods, results, ecdf_vals, .probnums, .bsteps, .rep, .max_succ = ecdf_ms)
+  return(list(
+              df = get_mincnt(.methods, results, ecdf_vals, .probnums, .bsteps, .rep, .max_succ = 1),
+              ecdf = ecdf_vals))
 }
 
 ecdf_plot = function(.dfx) {
@@ -124,3 +127,6 @@ ecdf_grid = function(.dim, .methods) {
               bmf = 1,
               cf = 1))
 }
+
+
+
