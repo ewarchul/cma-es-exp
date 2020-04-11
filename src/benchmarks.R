@@ -2,7 +2,7 @@ source("parallel-benchmark.R")
 source("./cma-es/cma-es.R")
 
 
-DIMS = c(10, 30)
+DIMS = c(10)
 REP = 51
 CPUPC = 0.90
 PROBLEMS = 1:30

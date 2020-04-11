@@ -4,7 +4,7 @@ benchmark_parallel <- function(.method, .probnum, .dims, .rep, .cpupc = .75) {
 
   start.time  <- Sys.time()
 
-  scores <- seq(from = -1400, to = 1400, by=100)
+  scores <- seq(from = 100, to = 3000, by=100)
 
   no_cores <- .cpupc*detectCores()
 
@@ -17,17 +17,17 @@ benchmark_parallel <- function(.method, .probnum, .dims, .rep, .cpupc = .75) {
     results = foreach(n = .probnum, 
                       .combine = c,
                       .export = c("scores","d") )  %dopar%  {
-                        library(cec2013)
+                        library(cec2017)
                         resultVector <- c()
 			resets <- c()
 
-      informMatrix <- matrix(0, nrow=100, ncol=.rep)
+      informMatrix <- matrix(0, nrow=14, ncol=.rep)
 
       for(i in 1:.rep){
 			  result <- tryCatch({
 					.method(
 						rep(0,d),
-						fn = function(x) cec2013::cec2013(n, x),
+						fn = function(x) cec2017::cec2017(n, x),
 						lower = -100,
 						upper = 100
 					)}, error = 
@@ -38,7 +38,7 @@ benchmark_parallel <- function(.method, .probnum, .dims, .rep, .cpupc = .75) {
 
         resultVector <- c(resultVector, abs(result$value-scores[n]))
 			  resets <- c(resets,result$resets)
-			  recordedTimes <- seq(0.01,1,by=0.01)
+			  recordedTimes <- c(0.01, 0.02, 0.03, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0) 
 
 			  for(bb in 1:length(recordedTimes)){
 			    informMatrix[bb,i] <- abs(result$diagnostic$bestVal[recordedTimes[bb]*ceiling(nrow(result$diagnostic$bestVal)),] - scores[n])
