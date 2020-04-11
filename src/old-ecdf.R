@@ -26,18 +26,18 @@ ecdfIEEE<- function(n,f_from,f_to){
   results_quant <- list()
   
   for(p in 1:30){
-    results_class[[p]] <- read.table(file = paste(des_path, "CMAES-", p,"-",N,".txt",sep=""),sep = ",")
-    results_csa[[p]] <- read.table(file = paste(des_path,"cma-es-sigma-csa-",p,"-",N,".txt",sep=""),sep = ",")
-    results_quant[[p]] <- read.table(file = paste(des_path,"cma-es-sigma-quant-0.09-",p,"-",N,".txt",sep=""),sep = ",")
+    results_class[[p]] <- read.table(file = paste("../data/cec17-archive/M/CMAES-", p,"-",N,".txt",sep=""),sep = ",")
+    results_csa[[p]] <- read.table(file = paste(des_path,"cma-es-csa-",p,"-",N,".txt",sep=""),sep = ",")
+ #   results_quant[[p]] <- read.table(file = paste(des_path,"cma-es-sigma-quant-0.09-",p,"-",N,".txt",sep=""),sep = ",")
 
     ecdfValues[[p]] <- rev(c(1 %o% (10)^(0.2*((log10(max(min(
                                                         min(results_class[[p]][14,]),
-                                                        min(results_csa[[p]][14,]),
-                                                        min(results_quant[[p]][14,])
+                                                        min(results_csa[[p]][14,])
+#                                                        min(results_quant[[p]][14,])
                                                             ),10^-8)  )/0.2):(log10(max(
                                                                  max(results_class[[p]][1,]),
-                                                                 max(results_csa[[p]][1,]),
-                                                                 max(results_quant[[p]][1,])
+                                                                 max(results_csa[[p]][1,])
+#                                                                 max(results_quant[[p]][1,])
                                                                  )  )/0.2) ))))
       }
 
@@ -51,12 +51,11 @@ ecdfIEEE<- function(n,f_from,f_to){
     for(b in 1:length(budgetSteps)){
       for(e in 1:length(ecdfValues[[p]])){
         minCount_csa[b] <- minCount_csa[b] + sum(results_csa[[p]][b,]<ecdfValues[[p]][e])
-        minCount_quant[b] <- minCount_quant[b] + sum(results_quant[[p]][b,]<ecdfValues[[p]][e])
+#        minCount_quant[b] <- minCount_quant[b] + sum(results_quant[[p]][b,]<ecdfValues[[p]][e])
         minCount_class[b] <- minCount_class[b] + sum(results_class[[p]][b,]<ecdfValues[[p]][e])
       }
     }
-    ecdfMaxSucess <- ecdfMaxSucess + length(ecdfValues[[p]])*30
-    ecdfMaxSucess2 <- ecdfMaxSucess2 + length(ecdfValues[[p]])*51
+    ecdfMaxSucess <- ecdfMaxSucess + length(ecdfValues[[p]])*51
   }
   print(ecdfMaxSucess)
   # All single plot
@@ -75,8 +74,8 @@ ecdfIEEE<- function(n,f_from,f_to){
  # postscript( paste("Problems",F_from,"-",F_to,",N=",N,".eps",sep=""), width = 15, height = 15)
                                               #xlab="log10 of (f-evals / dimension)",ylab="Proportion of function + target pairs",
   rplot <- plot(budgetSteps,minCount_csa/(ecdfMaxSucess),xlab="log10 of (f-evals / dimension)",ylab="Proportion of function + target pairs",ylim=c(0, 1),type="b", lwd=2,lty=linetype[4], col="black", pch=plotchar[4], xaxt=isXaxt,  yaxt=isYaxt, cex.axis=1.5)
-  lines(budgetSteps,minCount_quant/(ecdfMaxSucess),type="b", lwd=2,lty=linetype[5], col="red", pch=plotchar[5])
-  lines(budgetSteps,minCount_class/(ecdfMaxSucess2),type="b", lwd=2,lty=linetype[6], col="blue", pch=plotchar[6])
+ # lines(budgetSteps,minCount_quant/(ecdfMaxSucess),type="b", lwd=2,lty=linetype[5], col="red", pch=plotchar[5])
+  lines(budgetSteps,minCount_class/(ecdfMaxSucess),type="b", lwd=2,lty=linetype[6], col="blue", pch=plotchar[6])
     
   #legend(-0.08, 1.03, c('DES','CMA-ES', 'RB_IPOP_CMA_ES','jSO','LSHADE_SPACMA','EBOwithCMAR','IDEbestNsize','PPSO','MM_OED','DYYPO','TLBO-FL','MOS-CEC2012','MOS-CEC2013','MOS-SOCO2011'), text.font=2, cex=1.2, col=colors_[1:14],pch=plotchar[1:14], lty=linetype[1:14] )
 

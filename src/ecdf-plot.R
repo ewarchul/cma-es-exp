@@ -1,5 +1,6 @@
 library(tidyverse)
 library(furrr)
+library(gridExtra)
 
 get_result = function(.probnum, .methods, .dim) {
    results = 
@@ -91,9 +92,7 @@ generate_df = function(.dim, .methods, .probnums, .rep = 30, .bsteps = c(0.01, 0
   ecdf_ms = 
     ecdf_vals %>% 
     get_ms(.rep)
-  return(list(
-              df = get_mincnt(.methods, results, ecdf_vals, .probnums, .bsteps, .rep, .max_succ = 1),
-              ecdf = ecdf_vals))
+  get_mincnt(.methods, results, ecdf_vals, .probnums, .bsteps, .rep, .max_succ = ecdf_ms)
 }
 
 ecdf_plot = function(.dfx) {
@@ -109,23 +108,39 @@ ecdf_plot = function(.dfx) {
 }
 
 
-ecdf_grid = function(.dim, .methods) {
+get_grid_df = function(.dim, .methods) {
   # Unimodal functions
   gplot_uf = 
-    generate_df(.dim, .methods, 1:5) %>%
+    generate_df(.dim, .methods, 1:3) %>%
     ecdf_plot()
   # Basic multimodal functions
- # gplot_bmf = 
-    #generate_df(.dim, .methods, c(6:8)) %>%
-    #ecdf_plot()
-  ## Composition functions
-  #gplot_cf = 
-    #generate_df(.dim, .methods, 21:23) %>%
-    #ecdf_plot()
+  gplot_mf = 
+    generate_df(.dim, .methods, c(4:10)) %>%
+    ecdf_plot()
+  # Hybrid functions
+  gplot_hf = 
+    generate_df(.dim, .methods, c(11:20)) %>%
+    ecdf_plot()
+  # Composition functions
+  gplot_cf = 
+    generate_df(.dim, .methods, 21:30) %>%
+    ecdf_plot()
   return(list(
-              uf = gplot_uf,
-              bmf = 1,
-              cf = 1))
+              unimodal = gplot_uf,
+              multimodal = gplot_mf,
+              hybrid = gplot_hf,
+              composit = gplot_cf))
+}
+
+
+ecdf_grid = function(dfg) {
+  gridExtra::grid.arrange(
+    dfg$unimodal,
+    dfg$mulitmodal,
+    dfg$hybrid,
+    dfg$composit,
+    nrow = 1,
+    ncol = 4)
 }
 
 
