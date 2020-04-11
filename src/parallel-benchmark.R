@@ -44,8 +44,8 @@ benchmark_parallel <- function(.method, .probnum, .dims, .rep, .cpupc = .75) {
 			    informMatrix[bb,i] <- abs(result$diagnostic$bestVal[recordedTimes[bb]*ceiling(nrow(result$diagnostic$bestVal)),] - scores[n])
         }
       }
-      write.table(resultVector, file = paste("../data/N/N", n, "D", d, result$label, sep="-"), sep = ",")
-      write.table(informMatrix, file = paste("../data/M/", result$label, "-", n, "-", d, ".txt", sep=""), sep = ",", col.names = F, row.names = F)
+      write.table(resultVector, file = paste("../data/cec17/N/N", n, "D", d, result$label, sep="-"), sep = ",")
+      write.table(informMatrix, file = paste("../data/cec17/M/", result$label, "-", n, "-", d, ".txt", sep=""), sep = ",", col.names = F, row.names = F)
       return(paste(paste("CEC2017 N=",n," D=",d,sep=""),median(resultVector), min(resultVector), max(resultVector), mean(resultVector),sd(resultVector), mean(resets), sep=","))
     }
     print(results, quote=FALSE)
