@@ -48,7 +48,6 @@ get_ecdf = function(.result, .maxb = 14, .minb = 1, .eps = 10^-8) {
 #' ugly af and needs refactoring
 
 get_mincnt = function(.methods, .results, .ecdf, .probnums, .bsteps, .rep, .max_succ) {
-  print(.max_succ)
   future::plan(multiprocess)
   .methods %>%
     furrr::future_map(function(met) {
