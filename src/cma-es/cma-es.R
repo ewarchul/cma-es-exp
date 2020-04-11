@@ -29,7 +29,7 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
   trace       <- controlParam("trace", FALSE)
   fnscale     <- controlParam("fnscale", 1)
   stopfitness <- controlParam("stopfitness", -Inf)
-  maxiter     <- controlParam("maxit", 100*N^2)
+  budget      <- controlParam("budget", 10000*N)
   sigma       <- controlParam("sigma", 0.5)
   sc_tolx     <- controlParam("stop.tolx", 1e-12 * sigma) ## Undocumented stop criterion
   keep.best   <- controlParam("keep.best", TRUE)
@@ -45,6 +45,7 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
 
   ## Strategy parameter setting (defaults as recommended by Nicolas Hansen):
   lambda      <- controlParam("lambda", 4*N)
+  maxiter     <- controlParam("maxit", round(budget/lambda))
   mu          <- controlParam("mu", floor(lambda/2))
   weights     <- controlParam("weights", log(mu+1) - log(1:mu))
   weights     <- weights/sum(weights)
@@ -99,7 +100,8 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
   ## Preallocate work arrays:
   arx <- matrix(0.0, nrow=N, ncol=lambda)
   arfitness <- numeric(lambda)
-  while (iter < maxiter) {
+  counteval = counteval + lambda
+  while (counteval < budget) {
     iter <- iter + 1L
 
     if (!keep.best) {

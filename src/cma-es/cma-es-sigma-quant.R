@@ -98,8 +98,8 @@ cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
   nm <- names(par) ## Names of parameters
 
   ## Preallocate work arrays:
-  arx <- matrix(0.0, nrow=N, ncol=lambda)
-  arfitness <- numeric(lambda)
+  arx <-  replicate(lambda, runif(N,0,3))
+  arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
   counteval = counteval + lambda
   while (counteval < budget) {
     iter <- iter + 1L
@@ -111,8 +111,10 @@ cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
     if (log.sigma)
       sigma.log[iter] <- sigma
 
-    if (log.bestVal)
-      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness)))
+    if (log.bestVal){
+      bestVal.log = rbind(bestVal.log, min(suppressWarnings(min(bestVal.log)), min(arfitness)))
+      print(bestVal.log)
+    }
 
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)

@@ -1,5 +1,6 @@
 library(tidyverse)
 library(furrr)
+
 get_result = function(.probnum, .methods, .dim) {
    results = 
     .methods %>%
@@ -7,6 +8,7 @@ get_result = function(.probnum, .methods, .dim) {
                  read.table(file = paste0("../data/M/", method, "-", .probnum, "-", .dim, ".txt"), sep = ",")
       }) %>% purrr::set_names(.methods)
 }
+
 ecdf_leval = function(.result, .maxb, .eps) {
   lhs = 
     .result %>%
@@ -21,6 +23,7 @@ ecdf_leval = function(.result, .maxb, .eps) {
     `/`(0.2)
   lhs_log
 }
+
 ecdf_reval = function(.result, .minb) {
   rhs = 
     .result %>%
@@ -34,6 +37,7 @@ ecdf_reval = function(.result, .minb) {
     `/`(0.2)
   rhs_log
 }
+
 get_ecdf = function(.result, .maxb = 100, .minb = 1, .eps = 10^-8) {
   lseq = ecdf_leval(.result, .maxb, .eps)
   rseq = ecdf_reval(.result, .minb)
@@ -42,30 +46,81 @@ get_ecdf = function(.result, .maxb = 100, .minb = 1, .eps = 10^-8) {
 
 #' ugly af and needs refactoring
 
-get_mincnt = function(.methods, .results, .ecdf, .probnums, .bsteps, .rep) {
+get_mincnt = function(.methods, .results, .ecdf, .probnums, .bsteps, .rep, .max_succ) {
+  future::plan(multiprocess)
   .methods %>%
     furrr::future_map(function(met) {
       min_cnt = rep(0,length(.bsteps))
-      for(problem in .probnums) {
+      for(problem in 1:length(.probnums)) {
         for(bstep in 1:length(.bsteps)) {
-          for(estep in 1:length(.ecdf[[problem]])) {
-            min_cnt[bstep] = min_cnt[bstep] + sum(.results[[problem]][[met]][bstep, ] < .ecdf[[problem]][estep])
+          for(estep in 1:length(.ecdf[[problem - length(problem) + 1]])) {
+            min_cnt[bstep] = min_cnt[bstep] + sum(.results[[problem - length(problem) + 1]][[met]][bstep, ] < .ecdf[[problem - length(problem) + 1]][estep])
           }
         }
       }
       min_cnt
-    }) %>%
+    }, .progress = TRUE) %>%
     purrr::set_names(.methods) %>%
-    tibble::as_tibble()
+    tibble::as_tibble() %>%
+    tidyr::gather(key = "method") %>%
+    dplyr::group_by(method) %>%
+    dplyr::mutate(
+                  bstep = .bsteps,
+                  value = value/.max_succ
+                  ) %>%
+    dplyr::ungroup()
 }
 
-generate_df <- function(.dim, .methods, .probnums, .rep = 30, .bsteps = seq(0.01, 1, 0.01)*log10(10000)) {
+get_ms = function(.ecdf, .rep) {
+  1:length(.ecdf) %>%
+    purrr::map(function(prob) {
+      length(.ecdf[[prob]])*.rep
+    }) %>%
+    purrr::reduce(sum)
+
+}
+
+generate_df = function(.dim, .methods, .probnums, .rep = 30, .bsteps = seq(0.01, 1, 0.01)*log10(10000)) {
   results = 
     .probnums %>%
     purrr::map(get_result, .methods, .dim) 
   ecdf_vals = 
     results %>%
     purrr::map(get_ecdf)
-  min_cnts = 
-    get_mincnt(.methods, results, ecdf_vals, .probnums, .bsteps, .rep)
+  ecdf_ms = 
+    ecdf_vals %>% 
+    get_ms(.rep)
+  get_mincnt(.methods, results, ecdf_vals, .probnums, .bsteps, .rep, .max_succ = ecdf_ms)
+}
+
+ecdf_plot = function(.dfx) {
+  .dfx %>%
+    ggplot2::ggplot(aes(x = bstep)) +
+    ggplot2::geom_point(aes(y = value, shape = method, color = method)) +
+    ggplot2::geom_line(aes(y = value, linetype = method, color = method)) +
+    ggplot2::scale_colour_brewer(palette="Dark2") +
+    ggplot2::theme_bw() +
+    xlab("log10 of (f-evals / dimension)") +
+    ylab("Proportion of function + target pairs") +
+    ylim(0, 1)
+}
+
+
+ecdf_grid = function(.dim, .methods) {
+  # Unimodal functions
+  gplot_uf = 
+    generate_df(.dim, .methods, 1:5) %>%
+    ecdf_plot()
+  # Basic multimodal functions
+ # gplot_bmf = 
+    #generate_df(.dim, .methods, c(6:8)) %>%
+    #ecdf_plot()
+  ## Composition functions
+  #gplot_cf = 
+    #generate_df(.dim, .methods, 21:23) %>%
+    #ecdf_plot()
+  return(list(
+              uf = gplot_uf,
+              bmf = 1,
+              cf = 1))
 }
