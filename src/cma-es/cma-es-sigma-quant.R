@@ -243,7 +243,7 @@ cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cma-es-csa",
+              label="cma-es-sigma-quant",
               constr.violations=cviol,
               diagnostic=log
   )
