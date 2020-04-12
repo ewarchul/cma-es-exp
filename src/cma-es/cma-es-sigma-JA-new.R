@@ -1,5 +1,5 @@
 library(magrittr)
-cma_es_sigma_JA_new <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = FALSE, control=list()) {
+cma_es_sigma_JA_new <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = TRUE, control=list()) {
 
   norm <- function(x)
     drop(sqrt(crossprod(x)))
