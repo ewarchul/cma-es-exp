@@ -1,3 +1,4 @@
+library(magrittr)
 cma_es <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
 
   norm <- function(x)
@@ -44,7 +45,7 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
   log.bestVal<- controlParam("diag.bestVal", log.all)
   
   ## Strategy parameter setting (defaults as recommended by Nicolas Hansen):
-  lambda      <- controlParam("lambda", 4*N)
+  lambda      <- controlParam("lambda", 4*N - 1)
   maxiter     <- controlParam("maxit", round(budget/lambda))
   mu          <- controlParam("mu", floor(lambda/2))
   weights     <- controlParam("weights", log(mu+1) - log(1:mu))
@@ -99,6 +100,7 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
   
   ## Preallocate work arrays:
   # arx <- matrix(0.0, nrow=N, ncol=lambda)
+  eval_mean = Inf
   arx <-  replicate(lambda, runif(N,0,3))
   arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
   counteval <- counteval + lambda
@@ -113,7 +115,7 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
       sigma.log[iter] <- sigma
     
     if (log.bestVal) 
-      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness)))
+      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness), eval_mean))
     
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
@@ -141,6 +143,10 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
         best.par <- arx[,valid,drop=FALSE][,wb]
       }
     }
+
+    mean_point = apply(vx, 1, mean) %>% t() %>% t()
+    eval_mean = apply(mean_point, 2, function(x) fn(x, ...) * fnscale)
+    counteval <- counteval + 1
     
     ## Order fitness:
     arindex <- order(arfitness)
@@ -230,7 +236,7 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cma-es-csa",
+              label="cma-es-csa-mean",
               constr.violations=cviol,
               diagnostic=log
   )
