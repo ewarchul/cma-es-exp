@@ -45,7 +45,7 @@ cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
   log.bestVal<- controlParam("diag.bestVal", log.all)
   
   ## Strategy parameter setting (defaults as recommended by Nicolas Hansen):
-  lambda      <- controlParam("lambda", 4*N)
+  lambda      <- controlParam("lambda", 4*N - 1)
   maxiter     <- controlParam("maxit", round(budget/lambda))
   mu          <- controlParam("mu", floor(lambda/2))
   weights     <- controlParam("weights", log(mu+1) - log(1:mu))
@@ -100,6 +100,7 @@ cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
   
   ## Preallocate work arrays:
   # arx <- matrix(0.0, nrow=N, ncol=lambda)
+  eval_mean = Inf
   arx <-  replicate(lambda, runif(N,0,3))
   arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
   counteval <- counteval + lambda
@@ -114,7 +115,7 @@ cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
       sigma.log[iter] <- sigma
     
     if (log.bestVal) 
-      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness)))
+      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), eval_mean, min(arfitness)))
     
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
@@ -166,7 +167,8 @@ cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
 
     mean_point = apply(vx, 1, mean) %>% t() %>% t()
     eval_mean = apply(mean_point, 2, function(x) fn(x, ...) * fnscale)
-    
+   
+    counteval = counteval + 1 
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
     if(CMA) {

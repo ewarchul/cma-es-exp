@@ -45,7 +45,7 @@ cma_es_sigma_JA_new <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA 
   log.bestVal<- controlParam("diag.bestVal", log.all)
   
   ## Strategy parameter setting (defaults as recommended by Nicolas Hansen):
-  lambda      <- controlParam("lambda", 4*N)
+  lambda      <- controlParam("lambda", 4*N - 1)
   maxiter     <- controlParam("maxit", round(budget/lambda))
   mu          <- controlParam("mu", floor(lambda/2))
   weights     <- controlParam("weights", log(mu+1) - log(1:mu))
@@ -103,6 +103,7 @@ cma_es_sigma_JA_new <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA 
   ## Preallocate work arrays:
   # arx <- matrix(0.0, nrow=N, ncol=lambda)
   arx <-  replicate(lambda, runif(N,0,3))
+  eval_xmeanOld = Inf
   arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
   counteval <- counteval + lambda
   while (counteval < budget) {
@@ -116,7 +117,7 @@ cma_es_sigma_JA_new <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA 
       sigma.log[iter] <- sigma
     
     if (log.bestVal) 
-      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness)))
+      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness), eval_xmeanOld))
     
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
@@ -181,6 +182,7 @@ cma_es_sigma_JA_new <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA 
    
     ## Mean point:
     eval_xmeanOld <- apply(t(xmeanOld), 1, function(x) fn(x, ...) * fnscale)
+    counteval = counteval + 1
 
 
     ## Adapt step size sigma: new approach
@@ -246,7 +248,7 @@ cma_es_sigma_JA_new <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA 
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cma-es-sigma-JA-0.33-new",
+              label="cma-es-sigma-JA-0.33-new-mean",
               constr.violations=cviol,
               diagnostic=log
   )
