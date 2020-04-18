@@ -143,7 +143,7 @@ cma_es_sigma_msr <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = T
     }
     counteval <- counteval + lambda
     
-    arfitness <- y * pen
+    arfitness <- y #* pen
     valid <- pen <= 1
     if (any(valid)) {
       wb <- which.min(y[valid])
