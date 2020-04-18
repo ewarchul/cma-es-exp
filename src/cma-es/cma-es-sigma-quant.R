@@ -45,7 +45,7 @@ cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
   log.bestVal<- controlParam("diag.bestVal", log.all)
   
   ## Strategy parameter setting (defaults as recommended by Nicolas Hansen):
-  lambda      <- controlParam("lambda", 4*N - 1)
+  lambda      <- controlParam("lambda", 4*N)
   maxiter     <- controlParam("maxit", round(budget/lambda))
   mu          <- controlParam("mu", floor(lambda/2))
   weights     <- controlParam("weights", log(mu+1) - log(1:mu))
@@ -115,7 +115,7 @@ cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
       sigma.log[iter] <- sigma
     
     if (log.bestVal) 
-      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness), eval_mean))
+      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness)))
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
     arx <- xmean + sigma * (BD %*% arz)
@@ -167,7 +167,6 @@ cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
 
     mean_point = apply(vx, 1, mean) %>% t() %>% t()
     eval_mean = apply(mean_point, 2, function(x) fn(x, ...) * fnscale)
-    counteval = counteval + 1
     
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
@@ -244,7 +243,7 @@ cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cma-es-sigma-quant-mean",
+              label="cma-es-sigma-quant",
               constr.violations=cviol,
               diagnostic=log
   )
