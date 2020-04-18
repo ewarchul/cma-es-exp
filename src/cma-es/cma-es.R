@@ -137,7 +137,7 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
     }
     counteval <- counteval + lambda
     
-    arfitness <- y #* pen 
+    arfitness <- y * pen 
     valid <- pen <= 1
     if (any(valid)) {
       wb <- which.min(y[valid])

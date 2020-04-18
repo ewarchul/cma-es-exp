@@ -128,15 +128,14 @@ cma_es_sigma_JA_new <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA 
     pen <- 1 + colSums((arx - vx)^2)
     pen[!is.finite(pen)] <- .Machine$double.xmax / 2
     cviol <- cviol + sum(pen > 1)
-    
     if (vectorized) {
       y <- fn(vx, ...) * fnscale
     } else {
       y <- apply(vx, 2, function(x) fn(x, ...) * fnscale)
     }
     counteval <- counteval + lambda
-    
-    arfitness <- y #* pen
+
+    arfitness <- y * pen
     valid <- pen <= 1
     if (any(valid)) {
       wb <- which.min(y[valid])
