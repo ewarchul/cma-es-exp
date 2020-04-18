@@ -114,9 +114,10 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
     if (log.sigma)
       sigma.log[iter] <- sigma
     
-    if (log.bestVal) 
+    if (log.bestVal && iter > 2) 
       bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness)))
-    
+
+
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
     arx <- xmean + sigma * (BD %*% arz)
@@ -136,7 +137,7 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
     }
     counteval <- counteval + lambda
     
-    arfitness <- y * pen
+    arfitness <- y #* pen 
     valid <- pen <= 1
     if (any(valid)) {
       wb <- which.min(y[valid])
