@@ -45,7 +45,7 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
   log.bestVal<- controlParam("diag.bestVal", log.all)
   
   ## Strategy parameter setting (defaults as recommended by Nicolas Hansen):
-  lambda      <- controlParam("lambda", 4*N - 1)
+  lambda      <- controlParam("lambda", 4*N)
   maxiter     <- controlParam("maxit", round(budget/lambda))
   mu          <- controlParam("mu", floor(lambda/2))
   weights     <- controlParam("weights", log(mu+1) - log(1:mu))
@@ -115,12 +115,14 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
       sigma.log[iter] <- sigma
     
     if (log.bestVal) 
-      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness), eval_mean))
+      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness)))
     
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
     arx <- xmean + sigma * (BD %*% arz)
     vx <- ifelse(arx > lower, ifelse(arx < upper, arx, upper), lower)
+
+
     if (!is.null(nm))
       rownames(vx) <- nm
     pen <- 1 + colSums((arx - vx)^2)
@@ -144,9 +146,6 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
       }
     }
 
-    mean_point = apply(vx, 1, mean) %>% t() %>% t()
-    eval_mean = apply(mean_point, 2, function(x) fn(x, ...) * fnscale)
-    counteval <- counteval + 1
     
     ## Order fitness:
     arindex <- order(arfitness)
@@ -236,7 +235,7 @@ cma_es <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cma-es-csa-mean",
+              label="cma-es-csa",
               constr.violations=cviol,
               diagnostic=log
   )
