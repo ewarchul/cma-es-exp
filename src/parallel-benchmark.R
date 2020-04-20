@@ -4,7 +4,7 @@ benchmark_parallel <- function(.method, .probnum, .dims, .rep, .cpupc = .75) {
 
   start.time  <- Sys.time()
 
-  scores <- seq(from = 100, to = 3000, by=100)
+  scores <- seq(100, 3000, by = 100)
 
   no_cores <- .cpupc*detectCores()
 
@@ -27,7 +27,7 @@ benchmark_parallel <- function(.method, .probnum, .dims, .rep, .cpupc = .75) {
 			  result <- tryCatch({
 					.method(
 						rep(0,d),
-						fn = function(x) cec2017(n, x),
+						fn = function(x) {cec2017(n, x)},
 						lower = -100,
 						upper = 100
 					)}, error = 
