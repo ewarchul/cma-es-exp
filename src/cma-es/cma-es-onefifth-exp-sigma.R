@@ -179,10 +179,9 @@ cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
     }
     else
       C = C
-    
+   
     ## Adapt step size sigma: Hansen 1/5th
     ps_ = length(which(arfitness < eval_meanOld))/lambda
-
     sigma = sigma*exp((1/3)*(ps_ - 0.25)/.75)
 
     
@@ -242,7 +241,7 @@ cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cma-es-sigma-expth",
+              label="cma-es-sigma-expth-fix",
               constr.violations=cviol,
               diagnostic=log
   )
