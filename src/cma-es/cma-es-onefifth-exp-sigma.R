@@ -101,6 +101,7 @@ cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
   ## Preallocate work arrays:
   # arx <- matrix(0.0, nrow=N, ncol=lambda)
   eval_mean = Inf
+  eval_meanOld = Inf
   arx <-  replicate(lambda, runif(N,0,3))
   arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
   counteval <- counteval + lambda
@@ -164,7 +165,7 @@ cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
     pc <- (1-cc)*pc + hsig * sqrt(cc*(2-cc)*mueff) * drop(BD %*% zmean)
 
      ## Mean point:
-
+    eval_meanOld = eval_mean
     mean_point = apply(vx, 1, mean) %>% t() %>% t()
     eval_mean = apply(mean_point, 2, function(x) fn(x, ...) * fnscale)
    
@@ -180,7 +181,7 @@ cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
       C = C
     
     ## Adapt step size sigma: Hansen 1/5th
-    ps_ = length(which(arfitness < eval_mean))/lambda
+    ps_ = length(which(arfitness < eval_meanOld))/lambda
 
     sigma = sigma*exp((1/3)*(ps_ - 0.25)/.75)
 
