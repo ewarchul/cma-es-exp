@@ -4,9 +4,10 @@ benchmark_parallel <- function(.method, .probnum, .dims, .rep, .cpupc = .75) {
 
   start.time  <- Sys.time()
 
-  scores <- seq(100, 3000, by = 100)
+  scores <- c(seq(-1400, -100, by = 100), seq(100, 1400, 100))  + 1500
+#  scores = seq(100, 3000, by = 100)
 
-  no_cores <- .cpupc*detectCores()
+  no_cores <- floor(.cpupc*detectCores())
 
   registerDoParallel(no_cores)
 
@@ -17,7 +18,7 @@ benchmark_parallel <- function(.method, .probnum, .dims, .rep, .cpupc = .75) {
     results = foreach(n = .probnum, 
                       .combine = c,
                       .export = c("scores","d") )  %dopar%  {
-                        library(cec2017)
+                        library(cec2013)
                         resultVector <- c()
 			resets <- c()
 
@@ -27,7 +28,7 @@ benchmark_parallel <- function(.method, .probnum, .dims, .rep, .cpupc = .75) {
 			  result <- tryCatch({
 					.method(
 						rep(0,d),
-						fn = function(x) {cec2017(n, x)},
+						fn = function(x) {cec2013(n, x) + 1500},
 						lower = -100,
 						upper = 100
 					)}, error = 
@@ -44,9 +45,9 @@ benchmark_parallel <- function(.method, .probnum, .dims, .rep, .cpupc = .75) {
 			    informMatrix[bb,i] <- abs(result$diagnostic$bestVal[recordedTimes[bb]*ceiling(nrow(result$diagnostic$bestVal)),] - scores[n])
         }
       }
-      write.table(resultVector, file = paste("../data/cec17/N/N", n, "D", d, result$label, sep="-"), sep = ",")
-      write.table(informMatrix, file = paste("../data/cec17/M/", result$label, "-", n, "-", d, ".txt", sep=""), sep = ",", col.names = F, row.names = F)
-      return(paste(paste("CEC2017 N=",n," D=",d,sep=""),median(resultVector), min(resultVector), max(resultVector), mean(resultVector),sd(resultVector), mean(resets), sep=","))
+      write.table(resultVector, file = paste("../data/cec13/N/N", n, "D", d, result$label, sep="-"), sep = ",")
+      write.table(informMatrix, file = paste("../data/cec13/M/", result$label, "-", n, "-", d, ".txt", sep=""), sep = ",", col.names = F, row.names = F)
+      return(paste(paste("CEC2013 N=",n," D=",d,sep=""),median(resultVector), min(resultVector), max(resultVector), mean(resultVector),sd(resultVector), mean(resets), sep=","))
     }
     print(results, quote=FALSE)
     
