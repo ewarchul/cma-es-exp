@@ -2,11 +2,11 @@ library(tidyverse)
 library(furrr)
 library(gridExtra)
 
-get_result = function(.probnum, .methods, .dim) {
+get_result = function(.probnum, .methods, .dim, .cec) {
    results = 
     .methods %>%
     purrr::map(function(method) {
-                 read.table(file = paste0("../data/cec17/M/", method, "-", .probnum, "-", .dim, ".txt"), sep = ",")
+                 read.table(file = paste0("../data/cec", .cec,"/M/", method, "-", .probnum, "-", .dim, ".txt"), sep = ",")
       }) %>% purrr::set_names(.methods)
 }
 
@@ -81,10 +81,10 @@ get_ms = function(.ecdf, .rep) {
 
 }
 
-generate_df = function(.dim, .methods, .probnums, .rep = 30, .bsteps = c(0.01, 0.02, 0.03, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0)*log10(10000)) {
+generate_df = function(.dim, .methods, .probnums, .cec = "17", .rep = 51, .bsteps = c(0.01, 0.02, 0.03, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0)*log10(10000)) {
   results = 
     .probnums %>%
-    purrr::map(get_result, .methods, .dim) 
+    purrr::map(get_result, .methods, .dim, .cec) 
   ecdf_vals = 
     results %>%
     purrr::map(get_ecdf)
@@ -97,49 +97,47 @@ generate_df = function(.dim, .methods, .probnums, .rep = 30, .bsteps = c(0.01, 0
 ecdf_plot = function(.dfx) {
   .dfx %>%
     ggplot2::ggplot(aes(x = bstep)) +
-    ggplot2::geom_point(aes(y = value, shape = method, color = method)) +
-    ggplot2::geom_line(aes(y = value, linetype = method, color = method)) +
+    ggplot2::geom_point(aes(y = value, shape = Method, color = Method), size = 0.5) +
+    ggplot2::geom_line(aes(y = value, linetype = Method, color = Method)) +
     ggplot2::scale_colour_brewer(palette="Dark2") +
     ggplot2::theme_bw() +
-    xlab("log10 of (f-evals / dimension)") +
-    ylab("Proportion of function + target pairs") +
+#    xlab("log10 of (f-evals / dimension)") +
+#    ylab("Proportion of function + target pairs") +
     ylim(0, 1)
 }
 
-
-get_grid_df = function(.dim, .methods) {
-  # Unimodal functions
-  gplot_uf = 
-    generate_df(.dim, .methods, 1:3) %>%
-    ecdf_plot()
-  # Basic multimodal functions
-  gplot_mf = 
-    generate_df(.dim, .methods, c(4:10)) %>%
-    ecdf_plot()
-  # Hybrid functions
-  gplot_hf = 
-    generate_df(.dim, .methods, c(11:20)) %>%
-    ecdf_plot()
-  # Composition functions
-  gplot_cf = 
-    generate_df(.dim, .methods, 21:30) %>%
-    ecdf_plot()
-  return(list(
-              unimodal = gplot_uf,
-              multimodal = gplot_mf,
-              hybrid = gplot_hf,
-              composit = gplot_cf))
+get_df_all = function(.methods, .probs, .cec) {
+  df_10 = 
+    generate_df(10, .methods, .probs, .cec = .cec) %>%
+    dplyr::mutate(label = "n = 10", cec = paste0("CEC", .cec)) %>%
+    set_names(.cec)
+  df_30 = 
+    generate_df(30, .methods, .probs, .cec = .cec) %>%
+    dplyr::mutate(label = "n = 30", cec = paste0("CEC", .cec)) %>%
+    set_names(.cec)
+  df_50 = 
+    generate_df(50, .methods, .probs, .cec = .cec) %>%
+    dplyr::mutate(label = "n = 50", cec = paste0("CEC", .cec)) %>%
+    set_names(.cec)
+  dplyr::bind_rows(df_10, df_30, df_50)
 }
 
+get_PPSN_plot_all = function(.dfx) {
+  .dfx %>%
+    dplyr::mutate(Method = method) %>%
+    ecdf_plot() +
+    ggplot2::facet_grid(cols = dplyr::vars(label), rows = dplyr::vars(cec)) +
+    xlab("log10 of (f-evals / dimension)") +
+    ylab("Proportion of function + target pairs") +
+    ggplot2::theme(panel.spacing = unit(1, "lines"), legend.position = "top",
+          strip.background = element_rect(color = "black", fill = "white"))
+}
 
-ecdf_grid = function(dfg) {
-  gridExtra::grid.arrange(
-    dfg$unimodal,
-    dfg$mulitmodal,
-    dfg$hybrid,
-    dfg$composit,
-    nrow = 1,
-    ncol = 4)
+save_eps = function(.plot, .cec, .x = 10, .y = 4) {
+#  ggsave(paste0("../doc/eps/grid-", .cec, stringr::str_replace_all(Sys.time(), " ", "-"), ".pdf"), .plot, width = .x, height = .y)
+  postscript(file = paste0("../doc/eps/grid-", .cec, "-", stringr::str_replace_all(Sys.time(), " ", "-"), ".eps"), width = .x, height = .y)
+  print(.plot)
+  dev.off()
 }
 
 
