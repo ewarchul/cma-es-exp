@@ -199,14 +199,14 @@ des_classic = function(par, fn, ..., lower, upper, control = list()) {
   sqrt_N = sqrt(N)
 
   #' Logging options:
-  log.all = controlParam("diag", TRUE)
-  log.Ft = controlParam("diag.Ft", log.all)
-  log.value = controlParam("diag.value", log.all)
-  log.mean = controlParam("diag.mean", log.all)
-  log.pop = controlParam("diag.pop", log.all)
-  log.bestVal = controlParam("diag.bestVal", log.all)
-  log.worstVal = controlParam("diag.worstVal", log.all)
-  log.eigen = controlParam("diag.eigen", log.all)
+#  log.all = controlParam("diag", FALSE)
+#  log.Ft = controlParam("diag.Ft", log.all)
+  log.value = controlParam("diag.value", TRUE)
+#  log.mean = controlParam("diag.mean", log.all)
+#  log.pop = controlParam("diag.pop", log.all)
+  log.bestVal = controlParam("diag.bestVal", TRUE)
+#  log.worstVal = controlParam("diag.worstVal", log.all)
+#  log.eigen = controlParam("diag.eigen", log.all)
 
 
   #' nonLamarckian approach allows individuals to violate boundaries.
@@ -228,13 +228,13 @@ des_classic = function(par, fn, ..., lower, upper, control = list()) {
   restart.number = 0
 
   #' According to user specification, preallocate logging structures:
-  if (log.Ft) Ft.log = matrix(0, nrow = 0, ncol = 1)
+ # if (log.Ft) Ft.log = matrix(0, nrow = 0, ncol = 1)
   if (log.value) value.log = matrix(0, nrow = 0, ncol = lambda)
-  if (log.mean) mean.log = matrix(0, nrow = 0, ncol = 1)
-  if (log.pop) pop.log = array(0, c(N, lambda, maxiter))
+ # if (log.mean) mean.log = matrix(0, nrow = 0, ncol = 1)
+ # if (log.pop) pop.log = array(0, c(N, lambda, maxiter))
   if (log.bestVal) bestVal.log = matrix(0, nrow = 0, ncol = 1)
-  if (log.worstVal) worstVal.log = matrix(0, nrow = 0, ncol = 1)
-  if (log.eigen) eigen.log = matrix(0, nrow = 0, ncol = N)
+ # if (log.worstVal) worstVal.log = matrix(0, nrow = 0, ncol = 1)
+ # if (log.eigen) eigen.log = matrix(0, nrow = 0, ncol = N)
 
   #' Allocate buffers:
   #' Array containing last 'pathLength' steps of algorithm
@@ -271,7 +271,6 @@ des_classic = function(par, fn, ..., lower, upper, control = list()) {
 
     #' List stores best 'mu'(variable) individuals for 'hsize' recent iterations
     history = list() 
-
     Ft = initFt
 
     #' Create fisrt population
@@ -314,13 +313,13 @@ des_classic = function(par, fn, ..., lower, upper, control = list()) {
       weights = log(mu + 1) - log(1:mu)
       weights = weights / sum(weights)
 
-      if (log.Ft) Ft.log = rbind(Ft.log, Ft)
+  #    if (log.Ft) Ft.log = rbind(Ft.log, Ft)
       if (log.value) value.log = rbind(value.log, fitness)
-      if (log.mean) mean.log = rbind(mean.log, fn_l(bounceBackBoundary2(newMean)))
-      if (log.pop) pop.log[, , iter] = population
+  #    if (log.mean) mean.log = rbind(mean.log, fn_l(bounceBackBoundary2(newMean)))
+  #    if (log.pop) pop.log[, , iter] = population
       if (log.bestVal) bestVal.log = rbind(bestVal.log, min(suppressWarnings(min(bestVal.log)), min(fitness)))
-      if (log.worstVal) worstVal.log = rbind(worstVal.log, max(suppressWarnings(max(worstVal.log)), max(fitness)))
-      if (log.eigen) eigen.log = rbind(eigen.log, rev(sort(eigen(cov(t(population)))$values)))
+  #    if (log.worstVal) worstVal.log = rbind(worstVal.log, max(suppressWarnings(max(worstVal.log)), max(fitness)))
+  #    if (log.eigen) eigen.log = rbind(eigen.log, rev(sort(eigen(cov(t(population)))$values)))
 
       #' Select best 'mu' individuals of popu-lation
       selection = order(fitness)[1:mu]
@@ -374,7 +373,6 @@ des_classic = function(par, fn, ..., lower, upper, control = list()) {
       #' Repair the individual if necessary
       populationTemp = population
       populationRepaired = apply(population, 2, bounceBackBoundary2)
-
       counterRepaired = 0
       for (tt in 1:ncol(populationTemp)) {
         if (any(populationTemp[, tt] != populationRepaired[, tt])) {
@@ -387,7 +385,6 @@ des_classic = function(par, fn, ..., lower, upper, control = list()) {
       }
 
       popMean = drop(population %*% weightsPop)
-
       #' Evaluation
       fitness = fn_l(population)
       if (Lamarckism == FALSE) {
@@ -420,7 +417,6 @@ des_classic = function(par, fn, ..., lower, upper, control = list()) {
       #' Check if the middle point is the best found so far
       cumMean = 0.8 * cumMean + 0.2 * newMean
       cumMeanRepaired = bounceBackBoundary2(cumMean)
-
       fn_cum = fn_l(cumMeanRepaired)
       if (fn_cum < best.fit) {
         best.fit = drop(fn_cum)
@@ -439,19 +435,18 @@ des_classic = function(par, fn, ..., lower, upper, control = list()) {
       }
     }
   }
-
   cnt = c(`function` = as.integer(counteval))
   log = list()
 
   #' Subset lognostic data to only include those iterations which
   #' where actually performed.
-  if (log.Ft) log$Ft = Ft.log
+#  if (log.Ft) log$Ft = Ft.log
   if (log.value) log$value = value.log[1:iter, ]
-  if (log.mean) log$mean = mean.log[1:iter]
-  if (log.pop) log$pop = pop.log[, , 1:iter]
+#  if (log.mean) log$mean = mean.log[1:iter]
+#  if (log.pop) log$pop = pop.log[, , 1:iter]
   if (log.bestVal) log$bestVal = bestVal.log
-  if (log.worstVal) log$worstVal = worstVal.log
-  if (log.eigen) log$eigen = eigen.log
+#  if (log.worstVal) log$worstVal = worstVal.log
+#  if (log.eigen) log$eigen = eigen.log
 
   #' Drop names from value object
   names(best.fit) = NULL
@@ -466,5 +461,6 @@ des_classic = function(par, fn, ..., lower, upper, control = list()) {
     diagnostic = log
   )
   class(res) = "des.result"
+  print(res)
   return(res)
 }
