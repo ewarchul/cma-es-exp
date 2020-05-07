@@ -461,6 +461,5 @@ des_classic = function(par, fn, ..., lower, upper, control = list()) {
     diagnostic = log
   )
   class(res) = "des.result"
-  print(res)
   return(res)
 }
