@@ -1,4 +1,5 @@
 des_expth = function(par, fn, ..., lower, upper, control = list()) {
+  library(tidyverse)
 
   ##################################
   # Algorithm utility functions:   #
@@ -394,6 +395,12 @@ des_expth = function(par, fn, ..., lower, upper, control = list()) {
       #' Arithmetic mean point -- evaluation free
       eval_meanOld = eval_mean
       mean_point = apply(population, 1, mean) %>% t() %>% t()
+    
+      print(population)
+      print("XD")
+      print(mean_point)
+
+
       eval_mean = apply(mean_point, 2, function(x) fn(x, ...))
 
       #' Update Ft
