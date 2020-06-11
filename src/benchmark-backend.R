@@ -6,7 +6,7 @@ library(doParallel)
 library(cec2017)
 library(cec2013)
 
-#' Benchmark backend
+#' Run benchmark parallely
 #'
 #' @description 
 #' Function runs benchmark `.cec` on `.method` for given test functions and dimensionality. 
@@ -71,16 +71,52 @@ benchmark_parallel = function(.method, .probnum, .dims, .rep, .cec = 17, .cpupc 
         write.table(resultVector, file = paste(paste0("../data/cec", .cec, "/N/N"), n, "D", d, result$label, sep = "-"), sep = ",")
         write.table(informMatrix, file = paste(paste0("../data/cec", .cec, "/M/"), result$label, "-", n, "-", d, ".txt", sep = ""), sep = ",", col.names = F, row.names = F)
       }
-      cat(stringr::str_interp(
-"Statistics:
-  Median: ${median(resultVector)}
-  Mean: ${mean(resultVector)}
-  Max: ${max(resultVector)}
-  Min: ${min(resultVector)}
-  Std: ${sd(resultVector)}\n"
-                              )
-          )
+      print_stats(resultVector)
     }
   }
   stopImplicitCluster()
+}
+
+parse_yaml_config = function(filename) {
+  config = 
+    yaml::read_yaml(filename)
+  config$methods %>%
+    purrr::walk(function(method) {
+      source(here::here("src", "alg", paste0(stringr::str_replace(method, "_", "-"), ".R")))
+    })
+  config$methods_sym = 
+    config$methods %>%
+    purrr::map(base::get)
+  config
+}
+
+parse_config = function(config) {
+  if (is.list(config))
+    config
+  else
+    parse_yaml_config(config)
+}
+
+print_stats = function(vec) {
+  cat(stringr::str_interp(
+"Statistics:
+  Median: ${median(vec)}
+  Mean: ${mean(vec)}
+  Max: ${max(vec)}
+  Min: ${min(vec)}
+  Std: ${sd(vec)}\n"
+      )
+  )
+}
+
+#' Todo
+
+start_sms = function() {
+
+}
+
+#' Todo
+
+end_sms = function() {
+
 }
