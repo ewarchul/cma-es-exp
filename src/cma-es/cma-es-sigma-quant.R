@@ -81,6 +81,9 @@ cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
     pop.log <- array(0, c(N, mu, maxiter))
   if(log.bestVal)
     bestVal.log <-  matrix(0, nrow=0, ncol=1)
+
+  ratioVal.log <- numeric(maxiter) 
+
   
   ## Initialize dynamic (internal) strategy parameters and constants
   pc <- rep(0.0, N)
@@ -167,6 +170,8 @@ cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
 
     mean_point = apply(vx, 1, mean) %>% t() %>% t()
     eval_mean = apply(mean_point, 2, function(x) fn(x, ...) * fnscale)
+
+    ratioVal.log[iter] = eval_mean / arfitness[1] 
     
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
@@ -235,6 +240,7 @@ cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
   if (log.eigen) log$eigen <- eigen.log[1:iter,]
   if (log.pop)   log$pop   <- pop.log[,,1:iter]
   if (log.bestVal) log$bestVal <- bestVal.log
+  if (TRUE) log$ratioVal <- ratioVal.log
   
   ## Drop names from value object
   names(best.fit) <- NULL

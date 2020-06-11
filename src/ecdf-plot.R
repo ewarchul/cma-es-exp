@@ -97,13 +97,19 @@ generate_df = function(.dim, .methods, .probnums, .cec = "17", .rep = 51, .bstep
 ecdf_plot = function(.dfx) {
   .dfx %>%
     ggplot2::ggplot(aes(x = bstep)) +
-    ggplot2::geom_point(aes(y = value, shape = Method, color = Method), size = 0.5) +
-    ggplot2::geom_line(aes(y = value, linetype = Method, color = Method)) +
+    ggplot2::geom_point(aes(y = value, shape = Metoda, color = Metoda), size = 0.5) +
+    ggplot2::geom_line(aes(y = value, linetype = Metoda, color = Metoda), size = 1.2) +
     ggplot2::scale_colour_brewer(palette="Dark2") +
     ggplot2::theme_bw() +
-#    xlab("log10 of (f-evals / dimension)") +
-#    ylab("Proportion of function + target pairs") +
-    ylim(0, 1)
+    xlab("log10(#ewaluacje f-celu / wymiarowość)") +
+    ylab("Proporcja prob. rozwiązanych") +
+    ylim(0, 1) +
+    theme(
+    axis.title = element_text(size = 15, face = "bold"),
+    axis.text = element_text(size = 15, face = "bold"),
+    legend.text = element_text(size = 15, face = "bold"),
+    legend.title = element_text(size = 15, face = "bold"),
+          )
 }
 
 get_df_all = function(.methods, .probs, .cec) {
@@ -124,12 +130,14 @@ get_df_all = function(.methods, .probs, .cec) {
 
 get_PPSN_plot_all = function(.dfx) {
   .dfx %>%
-    dplyr::mutate(Method = method) %>%
     ecdf_plot() +
-    ggplot2::facet_grid(cols = dplyr::vars(label), rows = dplyr::vars(cec)) +
-    xlab("log10 of (f-evals / dimension)") +
-    ylab("Proportion of function + target pairs") +
-    ggplot2::theme(panel.spacing = unit(1, "lines"), legend.position = "top",
+    ggplot2::facet_grid(cols = dplyr::vars(label)) +
+    xlab("log10(#f-celu / wymiar.)") +
+    ylab("Proporcja prob. rozw.") +
+    ggplot2::theme(
+                   panel.spacing = unit(1, "lines"),
+                   legend.position = "top",
+                   strip.text = element_text(size = 15, face = "bold"),
           strip.background = element_rect(color = "black", fill = "white"))
 }
 
