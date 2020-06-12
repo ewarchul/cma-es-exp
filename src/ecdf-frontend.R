@@ -2,10 +2,16 @@ library(tidyverse)
 library(furrr)
 library(gridExtra)
 
+#' ECDF plot
+#' 
+#' @description
+#' Function plots ECDF curves.
+#' @param .dfx data frame with benchmark results
+#' @export
 
 ecdf_plot = function(.dfx) {
   .dfx %>%
-    ggplot2::ggplot(aes(x = bstep)) +
+    ggplot2::ggplot(aes(x = Bstep)) +
     ggplot2::geom_point(aes(y = Value, shape = Method, color = Method), size = 0.5) +
     ggplot2::geom_line(aes(y = Value, linetype = Method, color = Method), size = 1.2) +
     ggplot2::scale_colour_brewer(palette="Dark2") +

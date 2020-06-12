@@ -2,7 +2,7 @@ library(magrittr)
 library(matlib)
 library(mosaic)
 library(mvtnorm)
-cma_es <- function(par, fn, ..., lower, upper, CMA = FALSE, if_sigma = FALSE, control=list()) {
+cma_es_csa <- function(par, fn, ..., lower, upper, CMA = FALSE, if_sigma = FALSE, control=list()) {
 
   norm <- function(x)
     drop(sqrt(crossprod(x)))

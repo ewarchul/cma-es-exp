@@ -1,10 +1,1 @@
-methods:
-  - cma_es
-probnum:
-  - 1
-  - 2
-dims:
-  - 2
-cec: 13
-repnum: 1
-cpupc: 0.75
+
