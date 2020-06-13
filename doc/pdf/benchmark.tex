@@ -1,0 +1,60 @@
+\section{Benchmarking step-size adaptation methods on CEC'2013 and CEC'2017}
+\subsection{Overview of CEC'2013 and CEC'2017}
+
+We tested the performance of proposed methods using standardized sets of single objective optimization problems i.e. CEC2017 \cite{cec2017} and CEC2013 \cite{2013}. Both of them are based on the benchmark set created in 2005 \cite{cec2005}.
+
+Each problem in set is defined as follows:
+
+\begin{equation*}
+  \min_{\wek{x} \in [-100, 100]^{D}}\; f(\wek{x})
+\end{equation*}
+
+and should be considered as a black-box problem. One knows only dimensionality $D$, evaluation budget and value of global optimum. Note that the number of benchmark functions and functions by itself in CEC2013 and CEC2017 vary. 
+
+CEC2013 has 28 functions which are dived into three groups: unimodal, multimodal and composition functions.
+Structure of CEC2017 is similar but with the addition of hybrid as a fourth group of function. 
+Hybrid and composition functions are composed of several multimodal functions which are defined in such a way that in various regions of the
+domain the dynamics of the objective function is dominated by different components of that composition.
+Thus, the optimization algorithm must be able to capture these regularities over the whole run.
+Structures of benchmarks are presented in the table below (\ref{cec-table}).
+
+\begin{table}[H]
+\label{cec-table}
+\centering
+\begin{tabular}{|c|c|c|l|l|l|c|c|}
+\hline
+Benchmark & Unimodal          & \multicolumn{4}{c|}{Multimodal}             & Hybrid                  & Composition             \\ \hline
+CEC2017     & $f_1, \dots, f_3$ & \multicolumn{4}{c|}{$f_4, \dots, f_{10}$}   & $f_{11}, \dots, f_{20}$ & $f_{21}, \dots, f_{30}$ \\ \hline
+CEC2013     & $f_1, \dots, f_5$ & \multicolumn{4}{c|}{$f_{6}, \dots, f_{20}$} &                         & $f_{21}, \dots, f_{28}$ \\ \hline
+\end{tabular}
+\caption{Structure of used benchmarks.}
+\end{table}
+
+We evaluated each algorithm with default settings for CEC benchmarks i.e. 51 independent repetitions for function, $10^{4}\cdot D$ objective function evaluations and dimensionality $D = 10, 30, 50$.
+
+\subsection{Presentation of results using ECDF curves}
+
+Instead of using tabular form of results presentation suggested by authors of CEC competitions, we decided to use ECDF (empirical cumulative distribution function) curve.
+ECDF curve was proposed by Hansen \cite{Hansen-ecdf} as a convenient graphical form of results aggregation. A single curve defines the average dynamics of the algorithm.
+\\
+More formally, let us suppose that one of the tested algorithms in $k$-th repetition of $D$-dimensional benchmark function $f \in \mathcal{F}$ recorded in generation $t$ value $Q^{f}_{k, D, t}$ 
+which is the difference between the best-so-far objective function value and the global optimum. \\
+Next, consider mapping from $Q^{f}_{k, D, t}$ to unit interval $[0, 1$]:
+
+\begin{equation}
+  q^{f}_{k, D, t} = \ffrac{\log\left(\frac{Q^{f}_{k, D, t}}{m^{f}_{D}}\right)}{\log\left(\frac{M^{f}_{D}}{m^{f}_{D}}\right)}
+\end{equation}
+
+where $m^{f}_{D}$ and $M^{f}_{D}$ are respectively minimal and maximal values achieved among all tested algorithms, repetitions and generations for the given set of problems. \\
+
+To obtain ECDF points for functions from $\mathcal{F}$ one has to aggregate above values as follows:
+
+\begin{equation}
+  q^{F}_{D, t} = \frac{1}{K \cdot |F|}\sum_{f \in F} \sum^{K}_{k = 1} q^{f}_{k, D, t}  
+\end{equation}
+
+where $K$ is the number of repetitions.\\
+The curve is constructed by plotting values of $q^{F}_{D, t}$ against the set of fitness evaluation milestones based on fraction of given budget. 
+
+
+\subsection{Results}
