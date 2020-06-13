@@ -1,8 +1,8 @@
 library(magrittr)
-cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = TRUE, control=list()) {
+library(tidyverse)
+cma_es_expth <- function(par, fn, ..., lower, upper, p_target = 0.25, d_param = 1/3, CMA = TRUE, control=list()) {
   norm <- function(x)
     drop(sqrt(crossprod(x)))
-  
   controlParam <- function(name, default) {
     v <- control[[name]]
     if (is.null(v))
@@ -10,7 +10,6 @@ cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
     else
       return (v)
   }
-  
   ## Inital solution:
   xmean <- par
   N <- length(xmean)
@@ -180,8 +179,10 @@ cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
       C = C
    
     ## Adapt step size sigma: Hansen 1/5th
-    ps_ = length(which(arfitness < eval_meanOld))/lambda
-    sigma = sigma*exp((1/3)*(ps_ - 0.25)/.75)
+    p_succ = 
+      length(which(arfitness < eval_meanOld))/lambda
+    sigma = 
+      sigma * exp(d_param * (p_succ - p_target) / (1 - p_target))
 
     
     e <- eigen(C, symmetric=TRUE)
@@ -240,7 +241,7 @@ cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cma-es-sigma-expth-fix",
+              label = stringr::str_glue("cma-es-expth-dp-{round(d_param, 2)}-pt-{round(p_target, 2)}"),
               constr.violations=cviol,
               diagnostic=log
   )
