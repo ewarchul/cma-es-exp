@@ -1,6 +1,4 @@
-library(magrittr)
-cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = TRUE, control=list()) {
-
+cma_es_csa <- function(par, fn, ..., lower, upper, if_CMA = TRUE, control=list()) {
   norm <- function(x)
     drop(sqrt(crossprod(x)))
   
@@ -37,7 +35,7 @@ cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
   vectorized  <- controlParam("vectorized", FALSE)
   
   ## Logging options:
-  log.all    <- controlParam("diag", TRUE)
+  log.all    <- controlParam("diag", FALSE)
   log.sigma  <- controlParam("diag.sigma", log.all)
   log.eigen  <- controlParam("diag.eigen", log.all)
   log.value  <- controlParam("diag.value", log.all)
@@ -45,7 +43,7 @@ cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
   log.bestVal<- controlParam("diag.bestVal", log.all)
   
   ## Strategy parameter setting (defaults as recommended by Nicolas Hansen):
-  lambda      <- controlParam("lambda", 4*N)
+  lambda      <- controlParam("lambda", 4+floor(3*log(N)))
   maxiter     <- controlParam("maxit", round(budget/lambda))
   mu          <- controlParam("mu", floor(lambda/2))
   weights     <- controlParam("weights", log(mu+1) - log(1:mu))
@@ -100,8 +98,7 @@ cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
   
   ## Preallocate work arrays:
   # arx <- matrix(0.0, nrow=N, ncol=lambda)
-  eval_mean = Inf
-  arx <-  replicate(lambda, runif(N,0,3))
+  arx <-  replicate(lambda, runif(N,lower,upper))
   arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
   counteval <- counteval + lambda
   while (counteval < budget) {
@@ -116,6 +113,7 @@ cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
     
     if (log.bestVal) 
       bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness)))
+    
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
     arx <- xmean + sigma * (BD %*% arz)
@@ -158,32 +156,21 @@ cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
     if (log.value) value.log[iter,] <- arfitness[aripop]
     
     ## Cumulation: Update evolutionary paths
-    pc <- (1-cc)*pc + sqrt(cc*(2-cc)*mueff) * drop(BD %*% zmean)
-
-
-    ## Mean point:
-
-    mean_point = apply(vx, 1, mean) %>% t() %>% t()
-    eval_mean = apply(mean_point, 2, function(x) fn(x, ...) * fnscale)
+    ps <- (1-cs)*ps + sqrt(cs*(2-cs)*mueff) * (B %*% zmean)
+    hsig <- drop((norm(ps)/sqrt(1-(1-cs)^(2*counteval/lambda))/chiN) < (1.4 + 2/(N+1)))
+    pc <- (1-cc)*pc + hsig * sqrt(cc*(2-cc)*mueff) * drop(BD %*% zmean)
     
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
-    if(CMA) {
+    if (if_CMA) 
       C <- (1-ccov) * C + ccov * (1/mucov) *
-        (pc %o% pc) +
+        (pc %o% pc + (1-hsig) * cc*(2-cc) * C) +
         ccov * (1-1/mucov) * BDz %*% diag(weights) %*% t(BDz)
-    }
     else
       C = C
-   
-    ## Adapt step size sigma: new approach
-    pop_quart = stats::ecdf(arfitness)
-    mean_q = pop_quart(eval_mean)
-
-    if(mean_q < quant_val)
-      sigma = sigma*0.83
-    else
-      sigma = sigma*1.2
+    
+    ## Adapt step size sigma:
+    sigma <- sigma * exp((norm(ps)/chiN - 1)*cs/damps)
     
     e <- eigen(C, symmetric=TRUE)
     eE <- eigen(cov(t(arx)))
@@ -216,8 +203,8 @@ cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
     ## Escape from flat-land:
     if (arfitness[1] == arfitness[min(1+floor(lambda/2), 2+ceiling(lambda/4))]) { 
       sigma <- sigma * exp(0.2+cs/damps);
-      if (trace)
-        message("Flat fitness function. Increasing sigma.")
+    if (trace)
+      message("Flat fitness function. Increasing sigma.")
     }
     if (trace)
       message(sprintf("Iteration %i of %i: current fitness %f",
@@ -241,10 +228,10 @@ cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cov-cma-es-sigma-quant",
+              label = "cma-es-csa",
               constr.violations=cviol,
               diagnostic=log
   )
-  class(res) <- "cma_es.result"
+  class(res) <- "cma_es_csa.result"
   return(res)
 }

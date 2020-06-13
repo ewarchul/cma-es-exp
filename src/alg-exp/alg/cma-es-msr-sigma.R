@@ -168,13 +168,15 @@ cma_es_sigma_msr <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = T
     if (log.value) value.log[iter,] <- arfitness[aripop]
     
     ## Cumulation: Update evolutionary paths
-    pc <- (1-cc)*pc + sqrt(cc*(2-cc)*mueff) * drop(BD %*% zmean)
+    ps <- (1-cs)*ps + sqrt(cs*(2-cs)*mueff) * (B %*% zmean)
+    hsig <- drop((norm(ps)/sqrt(1-(1-cs)^(2*counteval/lambda))/chiN) < (1.4 + 2/(N+1)))
+    pc <- (1-cc)*pc + hsig * sqrt(cc*(2-cc)*mueff) * drop(BD %*% zmean)
     
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
     if(CMA) {
       C <- (1-ccov) * C + ccov * (1/mucov) *
-        (pc %o% pc) +
+        (pc %o% pc + (1-hsig) * cc*(2-cc) * C) +
         ccov * (1-1/mucov) * BDz %*% diag(weights) %*% t(BDz)
     }
     else
@@ -250,7 +252,7 @@ cma_es_sigma_msr <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = T
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cov-cma-es-sigma-msr",
+              label="cma-es-sigma-msr",
               constr.violations=cviol,
               diagnostic=log
   )

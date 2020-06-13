@@ -1,5 +1,5 @@
 library(magrittr)
-cma_es_sigma_JA_new <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = TRUE, control=list()) {
+cma_es_sigma_quant <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = TRUE, control=list()) {
 
   norm <- function(x)
     drop(sqrt(crossprod(x)))
@@ -60,8 +60,6 @@ cma_es_sigma_JA_new <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA 
   damps       <- controlParam("damps",
                               1 + 2*max(0, sqrt((mueff-1)/(N+1))-1) + cs)
   
-  sigma_denom = controlParam("sigma_denom", 1/3)
-
   ## Safety checks:
   stopifnot(length(upper) == N)  
   stopifnot(length(lower) == N)
@@ -83,6 +81,9 @@ cma_es_sigma_JA_new <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA 
     pop.log <- array(0, c(N, mu, maxiter))
   if(log.bestVal)
     bestVal.log <-  matrix(0, nrow=0, ncol=1)
+
+  ratioVal.log <- numeric(maxiter) 
+
   
   ## Initialize dynamic (internal) strategy parameters and constants
   pc <- rep(0.0, N)
@@ -102,8 +103,8 @@ cma_es_sigma_JA_new <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA 
   
   ## Preallocate work arrays:
   # arx <- matrix(0.0, nrow=N, ncol=lambda)
+  eval_mean = Inf
   arx <-  replicate(lambda, runif(N,0,3))
-  eval_xmeanOld = Inf
   arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
   counteval <- counteval + lambda
   while (counteval < budget) {
@@ -118,7 +119,6 @@ cma_es_sigma_JA_new <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA 
     
     if (log.bestVal) 
       bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness)))
-    
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
     arx <- xmean + sigma * (BD %*% arz)
@@ -128,13 +128,14 @@ cma_es_sigma_JA_new <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA 
     pen <- 1 + colSums((arx - vx)^2)
     pen[!is.finite(pen)] <- .Machine$double.xmax / 2
     cviol <- cviol + sum(pen > 1)
+    
     if (vectorized) {
       y <- fn(vx, ...) * fnscale
     } else {
       y <- apply(vx, 2, function(x) fn(x, ...) * fnscale)
     }
     counteval <- counteval + lambda
-
+    
     arfitness <- y * pen
     valid <- pen <= 1
     if (any(valid)) {
@@ -151,11 +152,6 @@ cma_es_sigma_JA_new <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA 
     
     aripop <- arindex[1:mu]
     selx <- arx[,aripop]
-
-
-    ####JA:
-    xmeanOld<-xmean 
-    ####:JA
     xmean <- drop(selx %*% weights)
     selz <- arz[,aripop]
     zmean <- drop(selz %*% weights)
@@ -165,30 +161,37 @@ cma_es_sigma_JA_new <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA 
     if (log.value) value.log[iter,] <- arfitness[aripop]
     
     ## Cumulation: Update evolutionary paths
-    pc <- (1-cc)*pc + sqrt(cc*(2-cc)*mueff) * drop(BD %*% zmean)
+    ps <- (1-cs)*ps + sqrt(cs*(2-cs)*mueff) * (B %*% zmean)
+    hsig <- drop((norm(ps)/sqrt(1-(1-cs)^(2*counteval/lambda))/chiN) < (1.4 + 2/(N+1)))
+    pc <- (1-cc)*pc + hsig * sqrt(cc*(2-cc)*mueff) * drop(BD %*% zmean)
+
+
+    ## Mean point:
+
+    mean_point = apply(vx, 1, mean) %>% t() %>% t()
+    eval_mean = apply(mean_point, 2, function(x) fn(x, ...) * fnscale)
+
+    ratioVal.log[iter] = eval_mean / arfitness[1] 
     
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
     if(CMA) {
       C <- (1-ccov) * C + ccov * (1/mucov) *
-        (pc %o% pc) +
+        (pc %o% pc + (1-hsig) * cc*(2-cc) * C) +
         ccov * (1-1/mucov) * BDz %*% diag(weights) %*% t(BDz)
     }
     else
       C = C
    
-    ## Mean point:
-    eval_xmeanOld <- apply(t(xmeanOld), 1, function(x) fn(x, ...) * fnscale)
-    counteval = counteval + 1
-
-
     ## Adapt step size sigma: new approach
     pop_quart = stats::ecdf(arfitness)
-    pTarget<-1/5
-    ps<-pop_quart(eval_xmeanOld)
-    sigmaMultExp<-(ps-pTarget)/(0.5 - pTarget)
-    sigma<-sigma*exp(sigma_denom*sigmaMultExp)
-        
+    mean_q = pop_quart(eval_mean)
+
+    if(mean_q < quant_val)
+      sigma = sigma*0.83
+    else
+      sigma = sigma*1.2
+    
     e <- eigen(C, symmetric=TRUE)
     eE <- eigen(cov(t(arx)))
     if (log.eigen)
@@ -237,6 +240,7 @@ cma_es_sigma_JA_new <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA 
   if (log.eigen) log$eigen <- eigen.log[1:iter,]
   if (log.pop)   log$pop   <- pop.log[,,1:iter]
   if (log.bestVal) log$bestVal <- bestVal.log
+  if (TRUE) log$ratioVal <- ratioVal.log
   
   ## Drop names from value object
   names(best.fit) <- NULL
@@ -245,7 +249,7 @@ cma_es_sigma_JA_new <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA 
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cov-cma-es-sigma-JA-0.33-new",
+              label="cma-es-sigma-quant",
               constr.violations=cviol,
               diagnostic=log
   )
