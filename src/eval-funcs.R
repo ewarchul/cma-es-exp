@@ -36,3 +36,12 @@ cecf_17 = function(.x) {
 cecf_25 = function(.x) {
     cec2013::cec2013(25, .x)
 }
+
+rastrigin_func = function(x) {
+  A_factor = 10
+  cos_term = 
+    purrr::map_dbl(x, function(x) {
+      base::cos(2*pi*x)
+    })
+  A_factor*length(x) + sum(x*x - A_factor*cos_term)
+}
