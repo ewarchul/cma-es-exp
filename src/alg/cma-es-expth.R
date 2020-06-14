@@ -1,5 +1,5 @@
 library(magrittr)
-cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA = TRUE, control=list()) {
+cma_es_expth <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
   norm <- function(x)
     drop(sqrt(crossprod(x)))
   
@@ -58,6 +58,8 @@ cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
                               + (1-1/mucov) * ((2*mucov-1)/((N+2)^2+2*mucov)))
   damps       <- controlParam("damps",
                               1 + 2*max(0, sqrt((mueff-1)/(N+1))-1) + cs)
+  p_target    <- controlParam("p_target", 0.25)
+  d_param     <- controlParam("d_param", 1/3)
   
   ## Safety checks:
   stopifnot(length(upper) == N)  
@@ -180,8 +182,11 @@ cma_es_sigma_expth <- function(par, fn, ..., lower, upper, quant_val=0.09, CMA =
       C = C
    
     ## Adapt step size sigma: Hansen 1/5th
-    ps_ = length(which(arfitness < eval_meanOld))/lambda
-    sigma = sigma*exp((1/3)*(ps_ - 0.25)/.75)
+    p_succ = 
+      length(which(arfitness < eval_meanOld))/lambda
+    sigma = 
+      sigma * exp(d_param * (p_succ - p_target) / (1 - p_target))
+
 
     
     e <- eigen(C, symmetric=TRUE)
