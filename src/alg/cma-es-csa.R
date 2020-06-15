@@ -43,7 +43,7 @@ cma_es_csa <- function(par, fn, ..., lower, upper, if_CMA = TRUE, control=list()
   log.bestVal<- controlParam("diag.bestVal", log.all)
   
   ## Strategy parameter setting (defaults as recommended by Nicolas Hansen):
-  lambda      <- controlParam("lambda", 4+floor(3*log(N)))
+  lambda      <- controlParam("lambda", 4*N)
   maxiter     <- controlParam("maxit", round(budget/lambda))
   mu          <- controlParam("mu", floor(lambda/2))
   weights     <- controlParam("weights", log(mu+1) - log(1:mu))
