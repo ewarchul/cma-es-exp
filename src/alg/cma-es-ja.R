@@ -110,7 +110,6 @@ cma_es_ja <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
   counteval <- counteval + lambda
   while (counteval < budget) {
     iter <- iter + 1L
-    
     if (!keep.best) {
       best.fit <- Inf
       best.par <- NULL
@@ -252,7 +251,7 @@ cma_es_ja <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cma-es-sigma-JA-0.33-new-mean",
+              label = stringr::str_glue("cma-es-ja-dp-{round(d_param, 2)}-pt-{round(p_target, 2)}"),
               constr.violations=cviol,
               diagnostic=log
   )
