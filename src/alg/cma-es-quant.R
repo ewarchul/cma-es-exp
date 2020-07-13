@@ -251,8 +251,7 @@ cma_es_quant <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list())
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cma-es-sigma-quant",
-              label = stringr::str_glue("cma-es-quant-qval-{round(quant_val, 2)}")
+              label = stringr::str_glue("cma-es-quant-qval-{round(quant_val, 2)}"),
               constr.violations=cviol,
               diagnostic=log
   )
