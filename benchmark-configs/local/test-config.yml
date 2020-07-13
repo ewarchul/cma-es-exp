@@ -1,0 +1,20 @@
+methods:
+     1:
+       algorithm: "cma_es_ja"
+       params:
+         - "p_target"
+         - "d_param"
+       values:
+         - 0.1
+         - 0.1
+ids:
+  - "cma-es-ja-test-bench"
+probnum: 1
+dims:
+  - 10
+cec: 17
+repnum: 1
+cpupc: 0.75
+source: "~/cma-es-exp/src/alg"
+dest: "~/cma-es-exp/data"
+twilio: "~/cma-es-exp/.twilio-meta"
