@@ -15,6 +15,6 @@ dims:
 cec: 17
 repnum: 1
 cpupc: 0.75
-source: "~/cma-es-exp/src/alg"
-dest: "~/cma-es-exp/data"
-twilio: "~/cma-es-exp/.twilio-meta"
+source: "~/Desktop/Cs/PhD/cma-es-exp/src/alg"
+dest: "~/Desktop/Cs/PhD//cma-es-exp/data"
+twilio: "~/Desktop/Cs/PhD/cma-es-exp/.twilio-meta"
