@@ -17,7 +17,7 @@ methods:
          - "quant_val"
        values:
          - 0.1
-    4: 
+     4: 
        algorithm: "cma_es_ja"
        params:
          - "quant_val"
