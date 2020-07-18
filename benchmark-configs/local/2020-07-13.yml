@@ -2,32 +2,31 @@ methods:
      1:
        algorithm: "cma_es_ja"
        params:
-         - "quant_val"
+         - "p_target"
+         - "d_param"
        values:
+         - 0.1
          - 0.1
      2: 
        algorithm: "cma_es_ja"
        params:
-         - "quant_val"
+         - "p_target"
+         - "d_param"
        values:
          - 0.1
+         - 0.3
      3: 
        algorithm: "cma_es_ja"
        params:
-         - "quant_val"
+         - "p_target"
+         - "d_param"
        values:
          - 0.1
-     4: 
-       algorithm: "cma_es_ja"
-       params:
-         - "quant_val"
-       values:
-         - 0.1
+         - 2
 ids:
-  - "cma-es-ja-qval-0.16"
-  - "cma-es-ja-qval-0.14"
-  - "cma-es-ja-qval-0.30"
-  - "cma-es-ja-qval-0.40"
+  - "cma-es-ja-"
+  - "cma-es-ja-"
+  - "cma-es-ja-"
 probnum: [1, 2, 3,
         4, 5, 6, 7, 8, 9, 10,
         11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
