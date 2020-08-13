@@ -241,7 +241,7 @@ cma_es_expth <- function(par, fn, ..., lower, upper, p_target = 0.25, d_param = 
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label = stringr::str_glue("cma-es-expth-dp-{round(d_param, 2)}-pt-{round(p_target, 2)}"),
+              label = stringr::str_glue("CMA-ES-PPMF-d-{round(d_param, 2)}-P_target-{round(p_target, 2)}"),
               constr.violations=cviol,
               diagnostic=log
   )
