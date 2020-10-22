@@ -58,8 +58,8 @@ cma_es_expth_mu <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list
                               + (1-1/mucov) * ((2*mucov-1)/((N+2)^2+2*mucov)))
   damps       <- controlParam("damps",
                               1 + 2*max(0, sqrt((mueff-1)/(N+1))-1) + cs)
-  p_target    <- controlParam("p_target", 0.25)
-  d_param     <- controlParam("d_param", 1/3)
+  p_target    <- controlParam("p_target", 0.1)
+  d_param     <- controlParam("d_param", 2)
   
   ## Safety checks:
   stopifnot(length(upper) == N)  
