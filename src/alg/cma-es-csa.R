@@ -113,7 +113,7 @@ cma_es_csa <- function(par, fn, ..., lower, upper, if_CMA = TRUE, control=list()
     
     if (log.bestVal) 
       bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness)))
-    
+
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
     arx <- xmean + sigma * (BD %*% arz)

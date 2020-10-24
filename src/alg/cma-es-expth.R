@@ -103,7 +103,7 @@ cma_es_expth <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list())
   # arx <- matrix(0.0, nrow=N, ncol=lambda)
   eval_mean = Inf
   eval_meanOld = Inf
-  arx <-  replicate(lambda, runif(N,0,3))
+  arx <-  replicate(lambda, runif(N,lower, upper))
   arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
   counteval <- counteval + lambda
   while (counteval < budget) {
@@ -118,7 +118,7 @@ cma_es_expth <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list())
     
     if (log.bestVal) 
       bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), eval_mean, min(arfitness)))
-    
+
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
     arx <- xmean + sigma * (BD %*% arz)
