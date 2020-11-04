@@ -16,6 +16,6 @@ dims:
 cec: 17
 repnum: 51
 cpupc: 0.75
-source: "~/cma-es-exp/src/R/alg"
+source: "~/cma-es-exp/R/alg"
 dest: "~/cma-es-exp/data/test-benchmarks"
 save: 1
