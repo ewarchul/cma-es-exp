@@ -32,7 +32,7 @@ cma_es_tpat <- function(par, fn, ..., lower, upper, if_CMA = TRUE, control = lis
   fnscale <- controlParam("fnscale", 1)
   stopfitness <- controlParam("stopfitness", -Inf)
   budget <- controlParam("budget", 10000 * N) ## The maximum number of fitness function calls
-  sigma <- controlParam("sigma", 2.5)
+  sigma <- controlParam("sigma", 1)
   sc_tolx <- controlParam("stop.tolx", 1e-12 * sigma) ## Undocumented stop criterion
   keep.best <- controlParam("keep.best", TRUE)
   vectorized <- controlParam("vectorized", FALSE)
@@ -170,6 +170,7 @@ cma_es_tpat <- function(par, fn, ..., lower, upper, if_CMA = TRUE, control = lis
 
     aripop <- arindex[1:mu]
     selx <- arx[, aripop]
+    xmean_old = xmean
     xmean <- drop(selx %*% weights)
     selz <- arz[, aripop]
     zmean <- drop(selz %*% weights)
