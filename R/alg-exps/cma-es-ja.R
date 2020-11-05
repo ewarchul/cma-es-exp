@@ -1,5 +1,6 @@
 library(magrittr)
-cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
+cma_es_ja <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
+
   norm <- function(x)
     drop(sqrt(crossprod(x)))
   
@@ -58,9 +59,11 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
                               + (1-1/mucov) * ((2*mucov-1)/((N+2)^2+2*mucov)))
   damps       <- controlParam("damps",
                               1 + 2*max(0, sqrt((mueff-1)/(N+1))-1) + cs)
-  p_target    <- controlParam("p_target", 0.1)
-  d_param     <- controlParam("d_param", 2)
   
+  d_param = controlParam("d_param", 1/3)
+  p_target = controlParam("p_target", 1/5)
+  diff_param = controlParam("diff_param", 0.5)
+
   ## Safety checks:
   stopifnot(length(upper) == N)  
   stopifnot(length(lower) == N)
@@ -101,14 +104,12 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
   
   ## Preallocate work arrays:
   # arx <- matrix(0.0, nrow=N, ncol=lambda)
-  eval_mean = Inf
-  eval_meanOld = Inf
-  arx <-  replicate(lambda, runif(N,lower, upper))
+  arx <-  replicate(lambda, runif(N,0,3))
+  eval_xmeanOld = Inf
   arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
   counteval <- counteval + lambda
   while (counteval < budget) {
     iter <- iter + 1L
-    
     if (!keep.best) {
       best.fit <- Inf
       best.par <- NULL
@@ -117,8 +118,8 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
       sigma.log[iter] <- sigma
     
     if (log.bestVal) 
-      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), eval_mean, min(arfitness)))
-
+      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness), eval_xmeanOld))
+    
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
     arx <- xmean + sigma * (BD %*% arz)
@@ -128,14 +129,13 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     pen <- 1 + colSums((arx - vx)^2)
     pen[!is.finite(pen)] <- .Machine$double.xmax / 2
     cviol <- cviol + sum(pen > 1)
-    
     if (vectorized) {
       y <- fn(vx, ...) * fnscale
     } else {
       y <- apply(vx, 2, function(x) fn(x, ...) * fnscale)
     }
     counteval <- counteval + lambda
-    
+
     arfitness <- y * pen
     valid <- pen <= 1
     if (any(valid)) {
@@ -152,6 +152,11 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     
     aripop <- arindex[1:mu]
     selx <- arx[,aripop]
+
+
+    ####JA:
+    xmeanOld<-xmean 
+    ####:JA
     xmean <- drop(selx %*% weights)
     selz <- arz[,aripop]
     zmean <- drop(selz %*% weights)
@@ -164,16 +169,10 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     ps <- (1-cs)*ps + sqrt(cs*(2-cs)*mueff) * (B %*% zmean)
     hsig <- drop((norm(ps)/sqrt(1-(1-cs)^(2*counteval/lambda))/chiN) < (1.4 + 2/(N+1)))
     pc <- (1-cc)*pc + hsig * sqrt(cc*(2-cc)*mueff) * drop(BD %*% zmean)
-
-     ## Mean point:
-    eval_meanOld = eval_mean
-    mean_point = apply(vx, 1, mean) %>% t() %>% t()
-    eval_mean = apply(mean_point, 2, function(x) fn(x, ...) * fnscale)
-   
-    counteval = counteval + 1 
+    
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
-    if(CMA) {
+    if (CMA) {
       C <- (1-ccov) * C + ccov * (1/mucov) *
         (pc %o% pc + (1-hsig) * cc*(2-cc) * C) +
         ccov * (1-1/mucov) * BDz %*% diag(weights) %*% t(BDz)
@@ -181,14 +180,21 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     else
       C = C
    
-    ## Adapt step size sigma: Hansen 1/5th
-    p_succ = 
-      length(which(arfitness < eval_meanOld))/lambda
+    ## Mean point:
+    eval_xmeanOld <- apply(t(xmeanOld), 1, function(x) fn(x, ...) * fnscale)
+    counteval = counteval + 1
+
+
+    ## Adapt step size sigma: new approach
+    pop_quart = 
+      stats::ecdf(arfitness)
+    ps = 
+      pop_quart(eval_xmeanOld)
+    sigmaMultExp = 
+      (ps-p_target)/(diff_param - p_target)
     sigma = 
-      sigma * exp(d_param * (p_succ - p_target) / (1 - p_target))
-
-
-    
+      sigma * exp(d_param*sigmaMultExp)
+        
     e <- eigen(C, symmetric=TRUE)
     eE <- eigen(cov(t(arx)))
     if (log.eigen)
@@ -245,7 +251,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cma-es-sigma-ppmf",
+              label = stringr::str_glue("cma-es-ja-dp-{round(d_param, 2)}-pt-{round(p_target, 2)}"),
               constr.violations=cviol,
               diagnostic=log
   )

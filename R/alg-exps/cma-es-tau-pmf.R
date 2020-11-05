@@ -1,5 +1,5 @@
 library(magrittr)
-cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
+cma_es_expth_tau <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
   norm <- function(x)
     drop(sqrt(crossprod(x)))
   
@@ -9,6 +9,15 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
       return (default)
     else
       return (v)
+  }
+  tau_mean = function(pop, tau) {
+    mean_vector = matrix(0, ncol = 1, nrow = base::nrow(pop))
+    matrix_mean = 
+        1:tau %>%
+        purrr::map(function(t) { as.matrix(apply(pop[,,t], 1, mean)) })
+    for(t in 1:tau) 
+        mean_vector = mean_vector + matrix_mean[[t]]
+    return((1/ncol(pop)) * mean_vector)
   }
   
   ## Inital solution:
@@ -60,6 +69,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
                               1 + 2*max(0, sqrt((mueff-1)/(N+1))-1) + cs)
   p_target    <- controlParam("p_target", 0.1)
   d_param     <- controlParam("d_param", 2)
+  tau_param     <- controlParam("tau_param", 3)
   
   ## Safety checks:
   stopifnot(length(upper) == N)  
@@ -90,6 +100,8 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
   D <- diag(N)
   BD <- B %*% D
   C <- BD %*% t(BD)
+  pop_log = 
+    array(0, c(N, lambda, tau_param))
   
   chiN <- sqrt(N) * (1-1/(4*N)+1/(21*N^2))
   
@@ -103,7 +115,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
   # arx <- matrix(0.0, nrow=N, ncol=lambda)
   eval_mean = Inf
   eval_meanOld = Inf
-  arx <-  replicate(lambda, runif(N,lower, upper))
+  arx <-  replicate(lambda, runif(N,0,3))
   arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
   counteval <- counteval + lambda
   while (counteval < budget) {
@@ -118,7 +130,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     
     if (log.bestVal) 
       bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), eval_mean, min(arfitness)))
-
+    
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
     arx <- xmean + sigma * (BD %*% arz)
@@ -145,7 +157,8 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
         best.par <- arx[,valid,drop=FALSE][,wb]
       }
     }
-    
+
+    pop_log[,,as.numeric(!(iter %% tau_param)) + 1] = vx
     ## Order fitness:
     arindex <- order(arfitness)
     arfitness <- arfitness[arindex]
@@ -169,6 +182,12 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     eval_meanOld = eval_mean
     mean_point = apply(vx, 1, mean) %>% t() %>% t()
     eval_mean = apply(mean_point, 2, function(x) fn(x, ...) * fnscale)
+
+    ## Tau-mean point:
+    mean_tau = 
+        tau_mean(pop_log, tau_param) 
+    eval_tau = 
+        apply(mean_tau, 2, function(x) fn(x, ...) * fnscale)
    
     counteval = counteval + 1 
     ## Adapt Covariance Matrix:
@@ -183,7 +202,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
    
     ## Adapt step size sigma: Hansen 1/5th
     p_succ = 
-      length(which(arfitness < eval_meanOld))/lambda
+      length(which(arfitness < eval_tau))/lambda
     sigma = 
       sigma * exp(d_param * (p_succ - p_target) / (1 - p_target))
 
@@ -245,7 +264,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cma-es-sigma-ppmf",
+              label=stringr::str_glue("cma-es-sigma-expth-tau-{tau_param}"),
               constr.violations=cviol,
               diagnostic=log
   )

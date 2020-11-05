@@ -1,5 +1,9 @@
 library(magrittr)
-cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
+library(matlib)
+library(mosaic)
+library(mvtnorm)
+cma_es_csa <- function(par, fn, ..., lower, upper, CMA = FALSE, if_sigma = FALSE, control=list()) {
+
   norm <- function(x)
     drop(sqrt(crossprod(x)))
   
@@ -44,7 +48,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
   log.bestVal<- controlParam("diag.bestVal", log.all)
   
   ## Strategy parameter setting (defaults as recommended by Nicolas Hansen):
-  lambda      <- controlParam("lambda", 4*N - 1)
+  lambda      <- controlParam("lambda", 4*N)
   maxiter     <- controlParam("maxit", round(budget/lambda))
   mu          <- controlParam("mu", floor(lambda/2))
   weights     <- controlParam("weights", log(mu+1) - log(1:mu))
@@ -58,8 +62,6 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
                               + (1-1/mucov) * ((2*mucov-1)/((N+2)^2+2*mucov)))
   damps       <- controlParam("damps",
                               1 + 2*max(0, sqrt((mueff-1)/(N+1))-1) + cs)
-  p_target    <- controlParam("p_target", 0.1)
-  d_param     <- controlParam("d_param", 2)
   
   ## Safety checks:
   stopifnot(length(upper) == N)  
@@ -80,8 +82,28 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     value.log <- matrix(0, nrow=maxiter, ncol=mu)
   if (log.pop)
     pop.log <- array(0, c(N, mu, maxiter))
-  if(log.bestVal)
+  if (log.bestVal)
     bestVal.log <-  matrix(0, nrow=0, ncol=1)
+
+    d_mean.log = matrix(0.0, nrow = maxiter, ncol = N)
+    delta_mean.log = matrix(0.0, nrow = maxiter, ncol = N)
+
+    norm_d.log <- numeric(maxiter)
+    norm_delta.log <- numeric(maxiter) 
+    dot_prod.log = numeric(maxiter)
+    angle_degree.log = numeric(maxiter)
+    angle_rad.log = numeric(maxiter)
+
+    norm_sum.log = numeric(maxiter)
+    delta_sum_proj.log = numeric(maxiter)
+    d_sum_proj.log = numeric(maxiter)
+
+    delta_proj_sum.log = numeric(maxiter)
+    d_proj_delta_norm.log = numeric(maxiter)
+    d_proj_sum.log = numeric(maxiter)
+    angle_rad.log = numeric(maxiter)
+
+
   
   ## Initialize dynamic (internal) strategy parameters and constants
   pc <- rep(0.0, N)
@@ -102,8 +124,35 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
   ## Preallocate work arrays:
   # arx <- matrix(0.0, nrow=N, ncol=lambda)
   eval_mean = Inf
-  eval_meanOld = Inf
-  arx <-  replicate(lambda, runif(N,lower, upper))
+  d_eval = 0
+
+  #' Populations
+  delta_matrix =  matrix(0.0, nrow = N, ncol = mu)
+  d_matrix =  matrix(0.0, nrow = N, ncol = lambda)
+
+  #' Mean points
+  dAve_mean = matrix(0.0, nrow = N, ncol = 1)
+  delta_mean = matrix(0.0, nrow = N, ncol = 1)
+
+  #' Sum of vectors
+  sum_vec = 0
+  delta_sum_proj = 0
+  d_sum_proj = 0
+  d_proj_sum = 0
+  delta_proj_sum = 0
+  #' Norms 
+  norm_delta = 0
+  norm_d = 0
+  dot_prod = 0
+  d_proj_delta_norm = 0
+  norm_sum = 0
+
+  #' Angles
+  angle_degree = 0
+  angle_rad = 0
+
+  
+  arx <-  replicate(lambda, runif(N,0,3))
   arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
   counteval <- counteval + lambda
   while (counteval < budget) {
@@ -115,14 +164,31 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     }
     if (log.sigma)
       sigma.log[iter] <- sigma
-    
-    if (log.bestVal) 
-      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), eval_mean, min(arfitness)))
+
+    norm_d.log[iter] = norm_d 
+    norm_delta.log[iter] = norm_delta 
+    dot_prod.log[iter] = dot_prod
+    angle_degree.log[iter] = angle_degree
+    angle_rad.log[iter] = angle_rad
+
+
+    d_proj_delta_norm.log[iter] = d_proj_delta_norm
+
+    norm_sum.log[iter] = norm_sum
+    delta_proj_sum.log[iter] = delta_proj_sum
+    d_proj_sum.log[iter] = d_proj_sum
+
+
+    if (log.bestVal && iter > 2) 
+      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness)))
+
 
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
     arx <- xmean + sigma * (BD %*% arz)
     vx <- ifelse(arx > lower, ifelse(arx < upper, arx, upper), lower)
+
+
     if (!is.null(nm))
       rownames(vx) <- nm
     pen <- 1 + colSums((arx - vx)^2)
@@ -136,7 +202,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     }
     counteval <- counteval + lambda
     
-    arfitness <- y * pen
+    arfitness <- y * pen 
     valid <- pen <= 1
     if (any(valid)) {
       wb <- which.min(y[valid])
@@ -145,6 +211,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
         best.par <- arx[,valid,drop=FALSE][,wb]
       }
     }
+
     
     ## Order fitness:
     arindex <- order(arfitness)
@@ -164,13 +231,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     ps <- (1-cs)*ps + sqrt(cs*(2-cs)*mueff) * (B %*% zmean)
     hsig <- drop((norm(ps)/sqrt(1-(1-cs)^(2*counteval/lambda))/chiN) < (1.4 + 2/(N+1)))
     pc <- (1-cc)*pc + hsig * sqrt(cc*(2-cc)*mueff) * drop(BD %*% zmean)
-
-     ## Mean point:
-    eval_meanOld = eval_mean
-    mean_point = apply(vx, 1, mean) %>% t() %>% t()
-    eval_mean = apply(mean_point, 2, function(x) fn(x, ...) * fnscale)
-   
-    counteval = counteval + 1 
+    
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
     if(CMA) {
@@ -180,14 +241,53 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     }
     else
       C = C
-   
-    ## Adapt step size sigma: Hansen 1/5th
-    p_succ = 
-      length(which(arfitness < eval_meanOld))/lambda
-    sigma = 
-      sigma * exp(d_param * (p_succ - p_target) / (1 - p_target))
 
+    d_matrix = matrix(rmvnorm(lambda, mean = rep(0.0, N), sigma = C), ncol = lambda)
+    d_eval = apply(d_matrix, 2, function(x) fn(x, ...) * fnscale)
+    dAve_mean = apply(d_matrix, 1, mean)
+    norm_d = norm(dAve_mean)
+     
+    new_arindex <- order(d_eval)
+    d_eval_sorted <- d_eval[new_arindex]
+    delta_pop_inds <- new_arindex[1:mu]
+    delta_matrix <- d_matrix[,delta_pop_inds]
+    delta_mean = apply(delta_matrix, 1, mean)
+    norm_delta = norm(delta_mean)
+    dot_prod = mosaic::project(x = dAve_mean, u = delta_mean, type = "length")
 
+    d_proj_delta = 
+      mosaic::project(x = dAve_mean, u = delta_mean, type = "vector")
+
+    sum_vec = 
+      d_proj_delta + delta_mean
+    
+    d_proj_delta_norm =
+      norm(d_proj_delta)
+
+    d_proj_sum =
+      mosaic::project(x = dAve_mean, u = sum_vec, type = "length")
+
+    delta_proj_sum =
+      mosaic::project(x = delta_mean, u = sum_vec, type = "length")
+
+    norm_sum = 
+      norm(sum_vec)
+    
+    
+
+    angle_degree = 
+      matlib::angle(dAve_mean, sum_vec, TRUE)
+    angle_rad = 
+      matlib::angle(delta_mean, sum_vec, FALSE)
+
+    d_mean.log[iter,] <- dAve_mean 
+    delta_mean.log[iter,] <- delta_mean 
+    
+    ## Adapt step size sigma:
+    if(if_sigma)
+      sigma <- sigma * exp((norm(ps)/chiN - 1)*cs/damps)
+    else
+      sigma = sigma 
     
     e <- eigen(C, symmetric=TRUE)
     eE <- eigen(cov(t(arx)))
@@ -237,6 +337,18 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
   if (log.eigen) log$eigen <- eigen.log[1:iter,]
   if (log.pop)   log$pop   <- pop.log[,,1:iter]
   if (log.bestVal) log$bestVal <- bestVal.log
+  if (TRUE) log$norm_d <- norm_d.log[1:iter]
+  if (TRUE) log$norm_delta <- norm_delta.log[1:iter]
+  if (TRUE) log$dot_prod <- dot_prod.log[1:iter]
+  if (TRUE) log$angle_degree <- angle_degree.log[1:iter]
+  if (TRUE) log$angle_rad <- angle_rad.log[1:iter]
+  if (TRUE) log$norm_sum <- norm_sum.log[1:iter]
+  if (TRUE) log$delta_proj_sum <- delta_proj_sum.log[1:iter]
+  if (TRUE) log$d_proj_sum <- d_proj_sum.log[1:iter]
+  if (TRUE) log$d_proj_delta_norm <- d_proj_delta_norm.log[1:iter]
+  if (TRUE) log$d_mean <- d_mean.log[1:iter,]
+  if (TRUE) log$delta_mean   <- delta_mean.log[1:iter,]
+
   
   ## Drop names from value object
   names(best.fit) <- NULL
@@ -245,7 +357,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cma-es-sigma-ppmf",
+              label="cma-es-csa",
               constr.violations=cviol,
               diagnostic=log
   )

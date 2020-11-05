@@ -1,5 +1,5 @@
 library(magrittr)
-cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
+cma_es_expth <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
   norm <- function(x)
     drop(sqrt(crossprod(x)))
   
@@ -58,8 +58,8 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
                               + (1-1/mucov) * ((2*mucov-1)/((N+2)^2+2*mucov)))
   damps       <- controlParam("damps",
                               1 + 2*max(0, sqrt((mueff-1)/(N+1))-1) + cs)
-  p_target    <- controlParam("p_target", 0.1)
-  d_param     <- controlParam("d_param", 2)
+  p_target    <- controlParam("p_target", 0.25)
+  d_param     <- controlParam("d_param", 1/3)
   
   ## Safety checks:
   stopifnot(length(upper) == N)  
@@ -103,7 +103,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
   # arx <- matrix(0.0, nrow=N, ncol=lambda)
   eval_mean = Inf
   eval_meanOld = Inf
-  arx <-  replicate(lambda, runif(N,lower, upper))
+  arx <-  replicate(lambda, runif(N,0,3))
   arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
   counteval <- counteval + lambda
   while (counteval < budget) {
@@ -118,7 +118,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     
     if (log.bestVal) 
       bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), eval_mean, min(arfitness)))
-
+    
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
     arx <- xmean + sigma * (BD %*% arz)
@@ -245,7 +245,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cma-es-sigma-ppmf",
+              label="cma-es-sigma-expth-fix",
               constr.violations=cviol,
               diagnostic=log
   )

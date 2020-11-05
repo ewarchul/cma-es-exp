@@ -1,5 +1,4 @@
-library(magrittr)
-cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
+cma_es_csa <- function(par, fn, ..., lower, upper, if_CMA = TRUE, control=list()) {
   norm <- function(x)
     drop(sqrt(crossprod(x)))
   
@@ -44,7 +43,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
   log.bestVal<- controlParam("diag.bestVal", log.all)
   
   ## Strategy parameter setting (defaults as recommended by Nicolas Hansen):
-  lambda      <- controlParam("lambda", 4*N - 1)
+  lambda      <- controlParam("lambda", 4*N)
   maxiter     <- controlParam("maxit", round(budget/lambda))
   mu          <- controlParam("mu", floor(lambda/2))
   weights     <- controlParam("weights", log(mu+1) - log(1:mu))
@@ -58,8 +57,6 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
                               + (1-1/mucov) * ((2*mucov-1)/((N+2)^2+2*mucov)))
   damps       <- controlParam("damps",
                               1 + 2*max(0, sqrt((mueff-1)/(N+1))-1) + cs)
-  p_target    <- controlParam("p_target", 0.1)
-  d_param     <- controlParam("d_param", 2)
   
   ## Safety checks:
   stopifnot(length(upper) == N)  
@@ -101,9 +98,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
   
   ## Preallocate work arrays:
   # arx <- matrix(0.0, nrow=N, ncol=lambda)
-  eval_mean = Inf
-  eval_meanOld = Inf
-  arx <-  replicate(lambda, runif(N,lower, upper))
+  arx <-  replicate(lambda, runif(N,lower,upper))
   arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
   counteval <- counteval + lambda
   while (counteval < budget) {
@@ -117,8 +112,8 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
       sigma.log[iter] <- sigma
     
     if (log.bestVal) 
-      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), eval_mean, min(arfitness)))
-
+      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness)))
+    
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
     arx <- xmean + sigma * (BD %*% arz)
@@ -164,30 +159,18 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     ps <- (1-cs)*ps + sqrt(cs*(2-cs)*mueff) * (B %*% zmean)
     hsig <- drop((norm(ps)/sqrt(1-(1-cs)^(2*counteval/lambda))/chiN) < (1.4 + 2/(N+1)))
     pc <- (1-cc)*pc + hsig * sqrt(cc*(2-cc)*mueff) * drop(BD %*% zmean)
-
-     ## Mean point:
-    eval_meanOld = eval_mean
-    mean_point = apply(vx, 1, mean) %>% t() %>% t()
-    eval_mean = apply(mean_point, 2, function(x) fn(x, ...) * fnscale)
-   
-    counteval = counteval + 1 
+    
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
-    if(CMA) {
+    if (if_CMA) 
       C <- (1-ccov) * C + ccov * (1/mucov) *
         (pc %o% pc + (1-hsig) * cc*(2-cc) * C) +
         ccov * (1-1/mucov) * BDz %*% diag(weights) %*% t(BDz)
-    }
     else
       C = C
-   
-    ## Adapt step size sigma: Hansen 1/5th
-    p_succ = 
-      length(which(arfitness < eval_meanOld))/lambda
-    sigma = 
-      sigma * exp(d_param * (p_succ - p_target) / (1 - p_target))
-
-
+    
+    ## Adapt step size sigma:
+    sigma <- sigma * exp((norm(ps)/chiN - 1)*cs/damps)
     
     e <- eigen(C, symmetric=TRUE)
     eE <- eigen(cov(t(arx)))
@@ -220,8 +203,8 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     ## Escape from flat-land:
     if (arfitness[1] == arfitness[min(1+floor(lambda/2), 2+ceiling(lambda/4))]) { 
       sigma <- sigma * exp(0.2+cs/damps);
-      if (trace)
-        message("Flat fitness function. Increasing sigma.")
+    if (trace)
+      message("Flat fitness function. Increasing sigma.")
     }
     if (trace)
       message(sprintf("Iteration %i of %i: current fitness %f",
@@ -245,10 +228,10 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cma-es-sigma-ppmf",
+              label = "cma-es-csa",
               constr.violations=cviol,
               diagnostic=log
   )
-  class(res) <- "cma_es.result"
+  class(res) <- "cma_es_csa.result"
   return(res)
 }

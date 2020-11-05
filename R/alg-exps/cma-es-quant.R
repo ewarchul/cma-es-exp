@@ -1,5 +1,6 @@
 library(magrittr)
-cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
+cma_es_quant <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) {
+
   norm <- function(x)
     drop(sqrt(crossprod(x)))
   
@@ -44,7 +45,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
   log.bestVal<- controlParam("diag.bestVal", log.all)
   
   ## Strategy parameter setting (defaults as recommended by Nicolas Hansen):
-  lambda      <- controlParam("lambda", 4*N - 1)
+  lambda      <- controlParam("lambda", 4*N)
   maxiter     <- controlParam("maxit", round(budget/lambda))
   mu          <- controlParam("mu", floor(lambda/2))
   weights     <- controlParam("weights", log(mu+1) - log(1:mu))
@@ -58,8 +59,8 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
                               + (1-1/mucov) * ((2*mucov-1)/((N+2)^2+2*mucov)))
   damps       <- controlParam("damps",
                               1 + 2*max(0, sqrt((mueff-1)/(N+1))-1) + cs)
-  p_target    <- controlParam("p_target", 0.1)
-  d_param     <- controlParam("d_param", 2)
+
+  quant_val          <- controlParam("quant_val", 0.09)
   
   ## Safety checks:
   stopifnot(length(upper) == N)  
@@ -82,6 +83,9 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     pop.log <- array(0, c(N, mu, maxiter))
   if(log.bestVal)
     bestVal.log <-  matrix(0, nrow=0, ncol=1)
+
+  ratioVal.log <- numeric(maxiter) 
+
   
   ## Initialize dynamic (internal) strategy parameters and constants
   pc <- rep(0.0, N)
@@ -102,8 +106,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
   ## Preallocate work arrays:
   # arx <- matrix(0.0, nrow=N, ncol=lambda)
   eval_mean = Inf
-  eval_meanOld = Inf
-  arx <-  replicate(lambda, runif(N,lower, upper))
+  arx <-  replicate(lambda, runif(N,0,3))
   arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
   counteval <- counteval + lambda
   while (counteval < budget) {
@@ -117,8 +120,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
       sigma.log[iter] <- sigma
     
     if (log.bestVal) 
-      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), eval_mean, min(arfitness)))
-
+      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness)))
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
     arx <- xmean + sigma * (BD %*% arz)
@@ -165,12 +167,14 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     hsig <- drop((norm(ps)/sqrt(1-(1-cs)^(2*counteval/lambda))/chiN) < (1.4 + 2/(N+1)))
     pc <- (1-cc)*pc + hsig * sqrt(cc*(2-cc)*mueff) * drop(BD %*% zmean)
 
-     ## Mean point:
-    eval_meanOld = eval_mean
+
+    ## Mean point:
+
     mean_point = apply(vx, 1, mean) %>% t() %>% t()
     eval_mean = apply(mean_point, 2, function(x) fn(x, ...) * fnscale)
-   
-    counteval = counteval + 1 
+
+    ratioVal.log[iter] = eval_mean / arfitness[1] 
+    
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
     if(CMA) {
@@ -181,13 +185,14 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     else
       C = C
    
-    ## Adapt step size sigma: Hansen 1/5th
-    p_succ = 
-      length(which(arfitness < eval_meanOld))/lambda
-    sigma = 
-      sigma * exp(d_param * (p_succ - p_target) / (1 - p_target))
+    ## Adapt step size sigma: new approach
+    pop_quart = stats::ecdf(arfitness)
+    mean_q = pop_quart(eval_mean)
 
-
+    if(mean_q < quant_val)
+      sigma = sigma*0.83
+    else
+      sigma = sigma*1.2
     
     e <- eigen(C, symmetric=TRUE)
     eE <- eigen(cov(t(arx)))
@@ -237,6 +242,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
   if (log.eigen) log$eigen <- eigen.log[1:iter,]
   if (log.pop)   log$pop   <- pop.log[,,1:iter]
   if (log.bestVal) log$bestVal <- bestVal.log
+  if (TRUE) log$ratioVal <- ratioVal.log
   
   ## Drop names from value object
   names(best.fit) <- NULL
@@ -245,7 +251,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cma-es-sigma-ppmf",
+              label = stringr::str_glue("cma-es-quant-qval-{round(quant_val, 2)}"),
               constr.violations=cviol,
               diagnostic=log
   )
