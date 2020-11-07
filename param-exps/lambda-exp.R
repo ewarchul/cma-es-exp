@@ -1,5 +1,5 @@
-library(eslags)
-source("classes-exps.R")
+library(esalgs)
+source("classes-exp.R")
 source("../R/eval-funcs.R")
 library(furrr)
 plan(multicore)
