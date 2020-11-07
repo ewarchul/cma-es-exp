@@ -120,7 +120,7 @@ quantileGens_plot <- function(.data) {
     ylim(0, 1) +
     xlab("Generations") +
     ylab("Quantile of mean point in pop.") +
-    theme_bw()
+    theme_minimal()
 }
 
 contour_plot <- function(
