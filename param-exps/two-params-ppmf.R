@@ -21,7 +21,7 @@ P_TARGET = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.9)
 D_PARAM = c(0.1, 0.3, 0.5, 1, 2, 10, 50, 100) 
 
 experiment = 
-  ExperimentTwo$new(P_TARGET, "p_target", D_PARAM, "d_param" N, EVALS)
+  ExperimentTwo$new(P_TARGET, "p_target", D_PARAM, "d_param", N, EVALS)
 experiment$
   run(ALG, REPS)$
   aggregate_data()$
