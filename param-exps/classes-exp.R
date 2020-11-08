@@ -91,3 +91,73 @@ Experiment <- R6::R6Class("Experiment",
     aggregated = NULL
   )
 )
+
+
+ExperimentTwo <- R6::R6Class("ExperimentTwo",
+  inherit = Experiment,
+  public = list(
+    initialize = function(pval, pname, qval, qname, dims, evals) {
+      private$parameter_values <- pval
+      private$parameter_name <- pname
+      private$qarameter_values <- qval
+      private$qarameter_name <- qname
+      private$dimensions <- dims
+      private$evals <- evals
+    },
+    run = function(alg, it) {
+     private$data = 
+       1:it %>% furrr::future_map_dfr(.options = furrr_options(seed = TRUE), function(i) {
+        param = private$parameter_name
+        qaram = private$qarameter_name
+        grid = expand.grid(
+            p = private$parameter_values,
+            q = private$qarameter_values,
+            d = private$dimensions,
+            f = private$evals
+        )
+        grid %>%
+          purrr::pmap_dfr(function(p, q, d, f) {
+            ctrl = list()
+            ctrl[[rlang::sym(param)]] = p
+            ctrl[[rlang::sym(qaram)]] = q
+            result <- alg(rep(100, d), fn = function(x) f$eval(x),
+                          lower = -100, upper = 100,
+                          control = ctrl)
+            tibble::tibble(
+              FE = result$counts[["function"]],
+              N = d,
+              Eval = f$get_name(),
+              !!rlang::sym(param) := p,
+              !!rlang::sym(qaram) := q,
+              Iteration = i,
+              Alg = result$label
+            )
+          })
+      })
+      invisible(self)
+    },
+    aggregate_data = function() {
+     private$aggregated = 
+       private$data %>%
+        dplyr::group_by(
+          N,
+          Eval,
+          Alg,
+          !!rlang::sym(private$parameter_name),
+          !!rlang::sym(private$qarameter_name)) %>%
+        dplyr::summarize(FE_ave = mean(FE)) %>%
+        dplyr::ungroup()
+     invisible(self)
+    }
+  ),
+  private = list(
+    parameter_values = NULL,
+    parameter_name = NULL,
+    qarameter_values = NULL,
+    qarameter_name = NULL,
+    dimensions = NULL,
+    evals = NULL,
+    data = NULL,
+    aggregated = NULL
+  )
+)
