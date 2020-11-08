@@ -10,7 +10,7 @@ ellips10 = function(x) ellips_func(x, 10)
 ellips100 = function(x) ellips_func(x, 100)
 
 REPS = 20
-N = c(2, 5, 10, 30)
+N = c(2, 5, 10, 30, 50, 100)
 ALG = cma_es_ppmf
 EVALS = c(
   Function$new("Sphere", sphere_func),
