@@ -1,5 +1,5 @@
-library(esalgs)
 source("classes-exp.R")
+source("cma-es-ppmf.R")
 source("../R/eval-funcs.R")
 library(furrr)
 plan(multicore)
@@ -11,7 +11,7 @@ ellips100 = function(x) ellips_func(x, 100)
 
 REPS = 20
 N = c(2, 5, 10, 30)
-ALG = esalgs::cma_es_ppmf
+ALG = cma_es_ppmf
 EVALS = c(
   Function$new("Sphere", sphere_func),
   Function$new("Ellips10", ellips10),
@@ -24,7 +24,7 @@ sigma_experiment =
 sigma_experiment$
   run(ALG, REPS)$
   aggregate_data()$
-  save_data("./sigma-experiments.csv")
+  save_data("./data/new-crit/sigma-experiments.csv")
 
   
 
