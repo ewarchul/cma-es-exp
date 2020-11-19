@@ -100,16 +100,15 @@ class CMA_ES_PPMF(CMA_ES):
 
 
             eval_meanOld = eval_mean
-            mean_point = np.apply_along_axis(np.mean, 0, vx)
+            mean_point = np.apply_along_axis(np.mean, 1, vx)
             eval_mean = fn(mean_point) 
             self.counteval += 1
-
+            
             BDz = np.matmul(BD, selz)
 
             C = self.adapt_matrix(C, BDz, pc, hsig)
 
             iter_log["sigma"] = sigma
-
             sigma = self.sigma_policy(
                 sigma,
                 eval_meanOld,
@@ -118,7 +117,7 @@ class CMA_ES_PPMF(CMA_ES):
                 self.p_target
             )
 
-            log_iter["mean_fit"] = eval_mean
+            iter_log["mean_fit"] = eval_mean
 
             eigen_values, eigen_vectors = np.linalg.eigh(C)
 
@@ -131,8 +130,6 @@ class CMA_ES_PPMF(CMA_ES):
             D = np.diag(np.sqrt(eigen_values))
 
             BD = np.matmul(B, D)
-
-            iter_log["sigma"] = arfitness[0]
 
             log_scalars = log_scalars.append(iter_log, ignore_index = True)
             if arfitness[0] <= self.stopfitness * self.fnscale:
@@ -156,7 +153,7 @@ class CMA_ES_PPMF(CMA_ES):
             ):
                 sigma = sigma * math.exp(0.2 + self.cs / self.damps)
 
-            if self.full_display:
-                return (self.best_fit, log_scalars)
-            else:
-                return self.best_fit
+        if self.full_display:
+            return (self.best_fit, self.msg, log_scalars)
+        else:
+            return self.best_fit
