@@ -15,9 +15,9 @@ class CMA_ES(ABC):
     def __init__(self, x0, lower, upper, **kwargs):
         """
         Function initializes CMA-ES parameters.
-        :param x0 initial point
-        :param lower lower boundry of hyperrectangle
-        :param upper upper boundry of hyperrectangle
+        :param: x0 initial point
+        :param: lower lower boundry of hyperrectangle
+        :param: upper upper boundry of hyperrectangle
         """
 
         self.init_point = x0
@@ -78,16 +78,17 @@ class CMA_ES(ABC):
             self.upper,
             (self.N, self.N)
         )
+        self.full_display = kwargs.get("self_display", True)
 
     def adapt_matrix(self, C, BDz, pc, hsig):
         """
         Covariance matrix adaptation with rank-mu and rank-one
         approximation.
-        :param C current covariance matrix
-        :param BDz TODO
-        :param pc current cumulative path for covariance matrix
-        :param hsig safety trick binary flag
-        :return updated covariance matrix
+        :param: C current covariance matrix
+        :param: BDz TODO
+        :param: pc current cumulative path for covariance matrix
+        :param: hsig safety trick binary flag
+        :return: updated covariance matrix
         """
 
         rank_one = np.outer(pc, pc) + (1 - hsig) * self.cc * (2 - self.cc) * C
@@ -105,6 +106,7 @@ class CMA_ES(ABC):
     def fmin(self, fn):
         """
         Main loop of CMA-ES algorithm.
-        :param fn evaluation function
+        :param fn: evaluation function
+        :type fn: [float] -> float 
         """
         pass

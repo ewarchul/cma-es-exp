@@ -6,14 +6,26 @@ import SigmaPolicy
 from utils import cast_on_boundries, is_pos_def
 
 
-class CMA_ES_CSA(CMA_ES):
+class CMA_ES_PPMF(CMA_ES):
     """
-    CMA-ES with CSA (Cumulative Step-size Adaptation) rule.
+    CMA-ES with PPMF (Previous Population Midpoint Fitness) rule.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.sigma_policy = SigmaPolicy.csa
+        self.sigma_policy = SigmaPolicy.ppmf
+        self.lambda_ = kwargs.get(
+            "lambda",
+            4 * self.N - 1
+        )
+        self.p_target = kwargs.get(
+            "p_target",
+            0.1
+        )
+        self.d_param = kwargs.get(
+            "d_param",
+            2
+        )
 
     def fmin(self, fn):
         """
@@ -28,6 +40,9 @@ class CMA_ES_CSA(CMA_ES):
         C = np.matmul(BD, BD.transpose())
         sigma = self.sigma_init
 
+        eval_mean = math.inf
+        eval_meanOld = math.inf
+
         self.best_fit = math.inf
         self.best_par = None
         self.iter = 0
@@ -35,20 +50,13 @@ class CMA_ES_CSA(CMA_ES):
         self.cviol = 0
         self.msg = None
 
-        log_scalars = pd.DataFrame(
-            columns=[
-                "iter",
-                "sigma",
-                "best_fit"
-            ]
-        )
+        log_scalars = pd.DataFrame(columns=["iter", "sigma", "best_fit", "mean_fit"])
 
         while self.counteval < self.budget:
             iter_log = {}
             self.iter += 1
 
             iter_log["iter"] = self.iter
-            iter_log["sigma"] = sigma
 
             arz = np.random.normal(0, 1, (self.N, self.lambda_))
             arx = xmean[:, None] + sigma * np.matmul(BD, arz)
@@ -90,10 +98,27 @@ class CMA_ES_CSA(CMA_ES):
                 self.cc * (2 - self.cc) * self.mueff
             ) * np.matmul(BD, zmean)
 
+
+            eval_meanOld = eval_mean
+            mean_point = np.apply_along_axis(np.mean, 0, vx)
+            eval_mean = fn(mean_point) 
+            self.counteval += 1
+
             BDz = np.matmul(BD, selz)
 
             C = self.adapt_matrix(C, BDz, pc, hsig)
-            sigma = self.sigma_policy(sigma, ps, self.chiN, self.cs, self.damps)
+
+            iter_log["sigma"] = sigma
+
+            sigma = self.sigma_policy(
+                sigma,
+                eval_meanOld,
+                arfitness,
+                self.d_param,
+                self.p_target
+            )
+
+            log_iter["mean_fit"] = eval_mean
 
             eigen_values, eigen_vectors = np.linalg.eigh(C)
 
@@ -107,8 +132,9 @@ class CMA_ES_CSA(CMA_ES):
 
             BD = np.matmul(B, D)
 
-            log_scalars = log_scalars.append(iter_log, ignore_index = True)
+            iter_log["sigma"] = arfitness[0]
 
+            log_scalars = log_scalars.append(iter_log, ignore_index = True)
             if arfitness[0] <= self.stopfitness * self.fnscale:
                 self.msg = "Stop fitness reached"
                 break
@@ -130,7 +156,7 @@ class CMA_ES_CSA(CMA_ES):
             ):
                 sigma = sigma * math.exp(0.2 + self.cs / self.damps)
 
-        if self.full_display:
-            return (self.best_fit, self.msg, log_scalars)
-        else:
-            return self.best_fit
+            if self.full_display:
+                return (self.best_fit, log_scalars)
+            else:
+                return self.best_fit
