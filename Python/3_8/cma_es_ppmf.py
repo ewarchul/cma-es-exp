@@ -105,10 +105,10 @@ class CMA_ES_PPMF(CMA_ES):
             self.counteval += 1
             
             BDz = np.matmul(BD, selz)
-
-            C = self.adapt_matrix(C, BDz, pc, hsig)
+            C= self.adapt_matrix(C, BDz, pc, hsig)
 
             iter_log["sigma"] = sigma
+            sigma_old = sigma
             sigma = self.sigma_policy(
                 sigma,
                 eval_meanOld,
@@ -130,6 +130,7 @@ class CMA_ES_PPMF(CMA_ES):
             D = np.diag(np.sqrt(eigen_values))
 
             BD = np.matmul(B, D)
+
 
             log_scalars = log_scalars.append(iter_log, ignore_index = True)
             if arfitness[0] <= self.stopfitness * self.fnscale:

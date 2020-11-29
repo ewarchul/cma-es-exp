@@ -6,9 +6,7 @@ x0 = np.repeat(100, 10)
 lower = -100
 upper = 100
 fn = lambda x: sum(x**2)
-alg = ppmf.CMA_ES_PPMF(
-    x0,
-    lower,
-    upper
-)
+alg_ppmf = ppmf.CMA_ES_PPMF(x0, lower, upper)
+alg_csa = csa.CMA_ES_CSA(x0, lower, upper)
+
 

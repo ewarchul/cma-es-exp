@@ -53,7 +53,7 @@ class CMA_ES(object):
         self.mueff = kwargs.get(
             "mueff", sum(self.weights) ** 2 / sum(self.weights ** 2)
         )
-        self.cc = kwargs.get("cc", 4 / (self.N + 4))
+        self.cc = kwargs.get("cc", 4.0 / (self.N + 4))
         self.cs = kwargs.get(
             "cs",
             (self.mueff + 2) / (self.N + self.mueff + 3)
