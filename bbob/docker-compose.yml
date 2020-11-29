@@ -1,0 +1,21 @@
+version: '3'
+services:
+  coco_platform:
+    build: .
+    volumes: 
+      - .:/coco_platform/
+  coco_plotter:
+    build: .
+    depends_on:
+      - coco_platform
+    volumes:
+      - .:/coco_platform/
+    command: sh post-processing.sh
+  coco_executor:
+    build: .
+    depends_on:
+      - coco_platform
+    volumes:
+      - .:/coco_platform/
+    command: python experiment.py
+
