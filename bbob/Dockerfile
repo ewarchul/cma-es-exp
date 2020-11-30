@@ -8,6 +8,7 @@ RUN apt-get update -y && \
   python-numpy \
   python-matplotlib \
   python-scipy \
+  python-pandas \
   python-six \
   python-setuptools \
   git
