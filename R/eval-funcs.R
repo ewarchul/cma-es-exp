@@ -1,3 +1,19 @@
+#' Sum diff function
+
+sum_diff_func = function(x) { 
+  N = length(x)
+  sum(abs(x)^(1:N + 1))
+}
+
+#' Rosenbrock function
+
+rosenbrock_func = function(x) {
+  N <- length(x)
+  xi <- x[1:(N-1)]
+  xnext <- x[2:N]
+  sum(100*(xnext-xi^2)^2 + (xi-1)^2)
+}
+
 
 #' Rastrigin function
 #' 

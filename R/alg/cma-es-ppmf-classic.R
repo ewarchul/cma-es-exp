@@ -246,7 +246,7 @@ cma_es_ppmf_classic <- function(par, fn, ..., lower, upper, CMA = TRUE, control=
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cma-es-sigma-ppmf",
+              label=stringr::str_glue("cma-es-ppmf-cls-pt{p_target}-dp{d_param}"),
               constr.violations=cviol,
               diagnostic=log
   )

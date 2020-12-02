@@ -117,8 +117,8 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     if (log.sigma)
       sigma.log[iter] <- sigma
     
-    if (log.bestVal) 
-      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), eval_mean, min(arfitness)))
+#    if (log.bestVal) 
+      #bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), eval_mean, min(arfitness)))
 
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
@@ -249,7 +249,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
               counts=cnt,
               convergence=ifelse(iter >= maxiter, 1L, 0L),
               message=msg,
-              label="cma-es-sigma-ppmf",
+              label=stringr::str_glue("cma-es-ppmf-pt{p_target}-dp{d_param}"),
               constr.violations=cviol,
               diagnostic=log
   )
