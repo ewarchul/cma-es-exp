@@ -40,6 +40,8 @@ cma_es_classic <- function(par, fn, ..., lower, upper, control=list()) {
   log.eigen  <- controlParam("diag.eigen", log.all)
   log.value  <- controlParam("diag.value", log.all)
   log.pop    <- controlParam("diag.pop", log.all)
+  log.bestVal <- controlParam("diag.bestVal", log.all)
+
 
   ## Strategy parameter setting (defaults as recommended by Nicolas Hansen):
   lambda      <- controlParam("lambda", 4+floor(3*log(N)))
@@ -75,6 +77,9 @@ cma_es_classic <- function(par, fn, ..., lower, upper, control=list()) {
     value.log <- matrix(0, nrow=maxiter, ncol=mu)
   if (log.pop)
     pop.log <- array(0, c(N, mu, maxiter))
+  if(log.bestVal)
+    bestVal.log <-  matrix(0, nrow=0, ncol=1)
+
   
   ## Initialize dynamic (internal) strategy parameters and constants
   pc <- rep(0.0, N)
@@ -94,7 +99,7 @@ cma_es_classic <- function(par, fn, ..., lower, upper, control=list()) {
 
   ## Preallocate work arrays:
   arx <- matrix(0.0, nrow=N, ncol=lambda)
-  arfitness <- numeric(lambda)
+  arfitness <- rep(Inf, lambda)
   while (iter < maxiter) {
     iter <- iter + 1L
 
@@ -135,6 +140,10 @@ cma_es_classic <- function(par, fn, ..., lower, upper, control=list()) {
     ## Order fitness:
     arindex <- order(arfitness)
     arfitness <- arfitness[arindex]
+
+    if (log.bestVal) 
+      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness)))
+
 
     aripop <- arindex[1:mu]
     selx <- arx[,aripop]
@@ -206,6 +215,7 @@ cma_es_classic <- function(par, fn, ..., lower, upper, control=list()) {
   if (log.sigma) log$sigma <- sigma.log[1:iter]
   if (log.eigen) log$eigen <- eigen.log[1:iter,]
   if (log.pop)   log$pop   <- pop.log[,,1:iter]
+  if (log.bestVal) log$bestVal <- bestVal.log
 
   ## Drop names from value object
   names(best.fit) <- NULL

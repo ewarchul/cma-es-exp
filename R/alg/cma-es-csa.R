@@ -97,11 +97,11 @@ cma_es_csa <- function(par, fn, ..., lower, upper, if_CMA = TRUE, control=list()
   nm <- names(par) ## Names of parameters
   
   ## Preallocate work arrays:
-  # arx <- matrix(0.0, nrow=N, ncol=lambda)
-  arx <-  replicate(lambda, runif(N,lower,upper))
-  arfitness <- numeric(lambda)
+  arx <- matrix(0.0, nrow=N, ncol=lambda)
+  #arx <-  replicate(lambda, runif(N,lower,upper))
+  arfitness <- rep(Inf, lambda)
   #arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
-  #counteval <- counteval + lambda
+  counteval <- counteval + lambda
   while (counteval < budget) {
     iter <- iter + 1L
     
@@ -112,8 +112,8 @@ cma_es_csa <- function(par, fn, ..., lower, upper, if_CMA = TRUE, control=list()
     if (log.sigma)
       sigma.log[iter] <- sigma
     
-    if (log.bestVal) 
-      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness)))
+#    if (log.bestVal) 
+      #bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness)))
 
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
@@ -145,6 +145,10 @@ cma_es_csa <- function(par, fn, ..., lower, upper, if_CMA = TRUE, control=list()
     ## Order fitness:
     arindex <- order(arfitness)
     arfitness <- arfitness[arindex]
+
+    if (log.bestVal) 
+      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), min(arfitness)))
+
     
     aripop <- arindex[1:mu]
     selx <- arx[,aripop]

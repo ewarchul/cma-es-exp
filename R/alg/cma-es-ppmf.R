@@ -100,12 +100,13 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
   nm <- names(par) ## Names of parameters
   
   ## Preallocate work arrays:
-  # arx <- matrix(0.0, nrow=N, ncol=lambda)
+   arx <- matrix(0.0, nrow=N, ncol=lambda)
   eval_mean = Inf
   eval_meanOld = Inf
   arx <-  replicate(lambda, runif(N,lower, upper))
-  arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
-  counteval <- counteval + lambda
+  arfitness <- rep(Inf, lambda) 
+ # arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
+ # counteval <- counteval + lambda
   while (counteval < budget) {
     iter <- iter + 1L
     
@@ -149,6 +150,9 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     ## Order fitness:
     arindex <- order(arfitness)
     arfitness <- arfitness[arindex]
+
+    if (log.bestVal) 
+      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), eval_mean, min(arfitness)))
     
     aripop <- arindex[1:mu]
     selx <- arx[,aripop]

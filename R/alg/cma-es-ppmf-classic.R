@@ -100,11 +100,11 @@ cma_es_ppmf_classic <- function(par, fn, ..., lower, upper, CMA = TRUE, control=
   nm <- names(par) ## Names of parameters
   
   ## Preallocate work arrays:
-  # arx <- matrix(0.0, nrow=N, ncol=lambda)
+   arx <- matrix(0.0, nrow=N, ncol=lambda)
   eval_mean = Inf
   eval_meanOld = Inf
-  arx = matrix(0.0, nrow=N, ncol=lambda)
-  arfitness = numeric(lambda)
+  #arx = matrix(0.0, nrow=N, ncol=lambda)
+  arfitness = rep(Inf, lambda)
   while (counteval < budget) {
     iter <- iter + 1L
     
@@ -115,9 +115,7 @@ cma_es_ppmf_classic <- function(par, fn, ..., lower, upper, CMA = TRUE, control=
     if (log.sigma)
       sigma.log[iter] <- sigma
     
-    if (log.bestVal) 
-      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), eval_mean, min(arfitness)))
-
+  
     ## Generate new population:
     arz <- matrix(rnorm(N*lambda), ncol=lambda)
     arx <- xmean + sigma * (BD %*% arz)
@@ -148,6 +146,10 @@ cma_es_ppmf_classic <- function(par, fn, ..., lower, upper, CMA = TRUE, control=
     ## Order fitness:
     arindex <- order(arfitness)
     arfitness <- arfitness[arindex]
+
+    if (log.bestVal) 
+      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), eval_mean, min(arfitness)))
+
     
     aripop <- arindex[1:mu]
     selx <- arx[,aripop]
