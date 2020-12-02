@@ -28,14 +28,14 @@ cma_es <- function(par, fn, ..., lower, upper, control=list()) {
   trace       <- controlParam("trace", FALSE)
   fnscale     <- controlParam("fnscale", 1)
   stopfitness <- controlParam("stopfitness", -Inf)
-  maxiter     <- controlParam("maxit", 100 * N^2)
-  sigma       <- controlParam("sigma", 0.5)
+  maxiter     <- controlParam("maxit", 10000 * N)
+  sigma       <- controlParam("sigma", 1)
   sc_tolx     <- controlParam("stop.tolx", 1e-12 * sigma) ## Undocumented stop criterion
   keep.best   <- controlParam("keep.best", TRUE)
   vectorized  <- controlParam("vectorized", FALSE)
 
   ## Logging options:
-  log.all    <- controlParam("diag", FALSE)
+  log.all    <- controlParam("diag", TRUE)
   log.sigma  <- controlParam("diag.sigma", log.all)
   log.eigen  <- controlParam("diag.eigen", log.all)
   log.value  <- controlParam("diag.value", log.all)

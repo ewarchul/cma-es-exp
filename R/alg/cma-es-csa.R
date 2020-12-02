@@ -43,7 +43,7 @@ cma_es_csa <- function(par, fn, ..., lower, upper, if_CMA = TRUE, control=list()
   log.bestVal<- controlParam("diag.bestVal", log.all)
   
   ## Strategy parameter setting (defaults as recommended by Nicolas Hansen):
-  lambda      <- controlParam("lambda", 4*N)
+  lambda      <- controlParam("lambda", 4 + floor(3*log(N)))
   maxiter     <- controlParam("maxit", round(budget/lambda))
   mu          <- controlParam("mu", floor(lambda/2))
   weights     <- controlParam("weights", log(mu+1) - log(1:mu))
@@ -99,8 +99,9 @@ cma_es_csa <- function(par, fn, ..., lower, upper, if_CMA = TRUE, control=list()
   ## Preallocate work arrays:
   # arx <- matrix(0.0, nrow=N, ncol=lambda)
   arx <-  replicate(lambda, runif(N,lower,upper))
-  arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
-  counteval <- counteval + lambda
+  arfitness <- numeric(lambda)
+  #arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
+  #counteval <- counteval + lambda
   while (counteval < budget) {
     iter <- iter + 1L
     
