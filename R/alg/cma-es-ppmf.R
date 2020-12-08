@@ -30,7 +30,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
   fnscale     <- controlParam("fnscale", 1)
   stopfitness <- controlParam("stopfitness", -Inf)
   budget      <- controlParam("budget", 10000*N )                     ## The maximum number of fitness function calls
-  sigma       <- controlParam("sigma", 0.5)
+  sigma       <- controlParam("sigma", 1)
   sc_tolx     <- controlParam("stop.tolx", 1e-12 * sigma) ## Undocumented stop criterion
   keep.best   <- controlParam("keep.best", TRUE)
   vectorized  <- controlParam("vectorized", FALSE)
