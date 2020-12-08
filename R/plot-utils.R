@@ -1,6 +1,6 @@
 library(scales)
 
-vg_plot = function(data, yval, scale_y_log = FALSE, xmax = NULL) {
+vg_plot = function(data, yval, color_column = "label", scale_y_log = FALSE, xmax = NULL) {
   colors = c(
     "#FFDB6D",
     "#C4961A",
@@ -17,7 +17,7 @@ vg_plot = function(data, yval, scale_y_log = FALSE, xmax = NULL) {
   )
   base_plot = 
     data %>%
-    ggplot2::ggplot(aes(x = t, y = !!rlang::sym(yval), col = label)) +
+    ggplot2::ggplot(aes(x = t, y = !!rlang::sym(yval), color = !!rlang::sym(color_column))) +
     ggplot2::geom_line(linetype = "solid", size = 1.5) + 
     ggplot2::theme_light() + 
     ggplot2::theme(
