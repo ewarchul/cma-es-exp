@@ -1,0 +1,29 @@
+methods:
+        1:
+                algorithm: "ipop_cma_es_csa"
+                params:
+                - "max_restarts"
+                values:
+                - 10
+        2:
+                algorithm: "ipop_cma_es_ppmf"
+                params:
+                - "max_restarts"
+                values:
+                - 10
+ids:
+  - "ipop-csa-4n"
+  - "ipop-ppmf-4n"
+probnum: [1, 2, 3,
+        4, 5, 6, 7, 8, 9, 10,
+        11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+        21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
+dims:
+  - 10
+  - 30
+cec: 17
+repnum: 51
+cpupc: 0.75
+source: "~/cma-es-exp/R/alg"
+dest: "~/cma-es-exp/data/ipop-benchmarks"
+save: 1
