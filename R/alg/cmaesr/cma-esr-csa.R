@@ -189,7 +189,7 @@ cma_esr_csa = function(
 
   		# Update evolution path with cumulative step-size Adaptation (CSA) / path length control
       # For an explanation of the last factor see appendix A in https://www.lri.fr/~hansen/cmatutorial.pdf
-      ps = (1 - cs) * ps + sqrt(cs * (2 - cs) * mu.eff) * (Cinvsqrt %*% y.w)
+      ps = (1 - cs) * ps + sqrt(cs * (2 - cs) * mu.eff) * (B %*% z.w)
 
       h.sigma <- drop((norm(ps)/sqrt(1-(1-cs)^(2*n.evals/lambda))/chi.n) < (1.4 + 2/(n+1)))
 
