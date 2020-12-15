@@ -2,7 +2,7 @@ library(BBmisc)
 library(magrittr)
 library(checkmate)
 
-cma_esr_ppmf = function(
+ipop_cma_esr_ppmf = function(
   par,
   fn,
   ...,
@@ -19,7 +19,11 @@ cma_esr_ppmf = function(
   budget = 10000 * n
   stop_ons_list = 
     c(
-      list(stopOnTolX(1e-12)),
+      list(stopOnTolX()),
+      list(stopOnCondCov()),
+      list(stopOnIndefCovMat()),
+      list(stopOnNoEffectAxis()),
+      list(stopOnNoEffectCoord()),
       list(stopOnMaxEvals(budget))
     )
   stop.ons = getCMAESParameter(control, "stop.ons", stop_ons_list)
@@ -27,19 +31,18 @@ cma_esr_ppmf = function(
     stopf("There must be at least one stopping condition!")
   }
   assertList(stop.ons, min.len = 1L, types = "cma_stopping_condition")
-
   # alwas check for indefinit covariance matrix first
   stop.ons = c(list(stopOnIndefCovMat()), stop.ons)
-
   # restart mechanism (IPOP-CMA-ES)
-  restart.triggers = getCMAESParameter(control, "restart.triggers", character(0L))
+  restart.triggers = list("conditionCov", "noEffectCoord", "noEffectAxis", "tolX", "indefCovMat")
+#  restart.triggers = getCMAESParameter(control, "restart.triggers", character(0L))
   stop.ons.names = sapply(stop.ons, function(stop.on) stop.on$code)
   if (!isSubset(restart.triggers, stop.ons.names)) {
     stopf("Only codes / short names of active stopping conditions allowed as restart trigger, but '%s' are no stopping conditions.", collapse(setdiff(restart.triggers, stop.ons.names), sep = ", "))
   }
   restart.multiplier = getCMAESParameter(control, "restart.multiplier", 2)
   assertNumber(restart.multiplier, lower = 1, na.ok = FALSE, finite = TRUE)
-  max.restarts = getCMAESParameter(control, "max.restarts", 0L)
+  max.restarts = getCMAESParameter(control, "max.restarts", 100)
   assertInt(max.restarts)
 
   #FIXME: default value should be derived from bounds
@@ -189,11 +192,6 @@ cma_esr_ppmf = function(
       z.best = arz[, new.pop.idx, drop = FALSE]
       z.w = drop(z.best %*% weights)
 
-      # log population
-      if (log.population) {
-        population.trace[[iter]] = x.best
-      }
-
   		# Update evolution path with cumulative step-size Adaptation (CSA) / path length control
       # For an explanation of the last factor see appendix A in https://www.lri.fr/~hansen/cmatutorial.pdf
       ps = (1 - cs) * ps + sqrt(cs * (2 - cs) * mu.eff) * (B %*% z.w)
@@ -264,7 +262,7 @@ cma_esr_ppmf = function(
       past.time = as.integer(difftime(Sys.time(), start.time, units = "secs")),
       n.iters = iter - 1L,
       n.restarts = run,
-      label = "cma_esr_ppmf",
+      label = "ipop_cma_esr_ppmf",
       population.trace = population.trace,
       diagnostic = log,
       message = stop.obj$stop.msgs,
