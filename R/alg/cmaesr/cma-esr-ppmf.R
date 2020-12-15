@@ -1,7 +1,8 @@
 library(BBmisc)
 library(checkmate)
+library(magrittr)
 
-cma_esr_csa = function(
+cma_esr_ppmf = function(
   par,
   fn,
   ...,
@@ -44,6 +45,8 @@ cma_esr_csa = function(
 
   #FIXME: default value should be derived from bounds
   sigma = getCMAESParameter(control, "sigma", 1)
+  d_param = getCMAESParameter(control, "d_param", 2)
+  p_target = getCMAESParameter(control, "p_target", 0.1)
   assertNumber(sigma, lower = 0L, finite = TRUE)
 
   # Precompute E||N(0,I)||
@@ -75,7 +78,7 @@ cma_esr_csa = function(
   for (run in 0:max.restarts) {
     # population and offspring size
     if (run == 0) {
-      lambda = getCMAESParameter(control, "lambda", 4 * n)
+      lambda = getCMAESParameter(control, "lambda", 4 * n - 1)
       assertInt(lambda, lower = 4)
       mu = getCMAESParameter(control, "mu", floor(lambda / 2))
       assertInt(mu)
@@ -126,6 +129,10 @@ cma_esr_csa = function(
     # no restart trigger fired until now
     restarting = FALSE
 
+    # PPMF variables
+    eval_mean = Inf
+    eval_meanOld = Inf
+
     # break inner loop if terminating stopping condition active or
     # restart triggered
   	while (!restarting) {
@@ -158,7 +165,7 @@ cma_esr_csa = function(
       fitn.ordered.idx = order(fitn, decreasing = FALSE)
       fitn.ordered = fitn[fitn.ordered.idx]
 
-      bestVal.log = rbind(bestVal.log, min(suppressWarnings(min(bestVal.log)), min(fitn.ordered)))
+      bestVal.log <- rbind(bestVal.log,min(suppressWarnings(min(bestVal.log)), eval_mean, min(fitn.ordered)))
 
       # update best solution so far
       valid = (penalties == 0)
@@ -198,9 +205,20 @@ cma_esr_csa = function(
       y = BD %*% z.best
       delta.h.sigma = as.numeric((1 - h.sigma) * cc * (2 - cc) <= 1)
   		C = (1 - c1 - cmu) * C + c1 * (pc %*% t(pc) + delta.h.sigma * C) + cmu * y %*% diag(weights) %*% t(y)
+      # Mean point:
+      eval_meanOld = eval_mean
+      mean_point = apply(arx.repaired, 1, mean) %>% t() %>% t()
+      eval_mean = apply(mean_point, 2, function(x) fn(x, ...))
+
+      n.evals = n.evals + 1
 
       # Update step-size sigma
-      sigma = sigma * exp(cs / ds * ((norm2(ps) / chi.n) - 1))
+      p_succ = 
+        length(which(fitn.ordered < eval_meanOld))/lambda
+      sigma = 
+        sigma * exp(d_param * (p_succ - p_target) / (1 - p_target))
+
+
 
       # Finally do decomposition C = B D^2 B^T
       e = eigen(C, symmetric = TRUE)
@@ -248,7 +266,7 @@ cma_esr_csa = function(
       past.time = as.integer(difftime(Sys.time(), start.time, units = "secs")),
       n.iters = iter - 1L,
       n.restarts = run,
-      label = "cma_esr_csa",
+      label = "cma_esr_ppmf",
       population.trace = population.trace,
       diagnostic = log,
       message = stop.obj$stop.msgs,
