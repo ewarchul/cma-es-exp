@@ -186,7 +186,7 @@ ipop_cma_esr_csa = function(
       z.w = drop(z.best %*% weights)
 
       # log population
-      if (1) {
+      if (log.population) {
         population.trace[[iter]] = x.best
       }
 
