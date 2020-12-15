@@ -206,9 +206,6 @@ cma_esr_csa = function(
       # escape flat fitness values
       if (fitn.ordered[1L] == fitn.ordered[ceiling(0.7 * lambda)]) {
         sigma = sigma * exp(0.2 + cs / ds)
-        if (!is.null(monitor)) {
-          warningf("Flat fitness values; increasing mutation step-size. Consider reformulating the objective!")
-        }
       }
 
       # CHECK STOPPING CONDITIONS
@@ -217,9 +214,6 @@ cma_esr_csa = function(
 
       n.stop.codes = length(stop.obj$codes)
       if (max.restarts > 0L && any(stop.obj$codes %in% restart.triggers)) {
-        if (!is.null(monitor)) {
-          messagef("Restart trigger fired! Restarting!!!")
-        }
         n.stop.codes = sum(!(stop.obj$codes %in% restart.triggers))
         restarting = TRUE
       }
