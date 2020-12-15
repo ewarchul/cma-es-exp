@@ -91,7 +91,7 @@ cma_esr_csa = function(
     ps = rep(0, n)
 
     # initialize recombination weights
-    weights = getCMAESParameter(control, "weights", log(mu + 0.5) - log(1:mu))
+    weights = getCMAESParameter(control, "weights", log(mu + 1) - log(1:mu))
     if (any(weights < 0)) {
       stopf("All weights need to be positive, but there are %i negative ones.", sum(which(weights < 0)))
     }
@@ -106,14 +106,13 @@ cma_esr_csa = function(
     mu.eff = sum(weights)^2 / sum(weights^2) # chosen such that mu.eff ~ lambda/4
 
     # step-size control
-    cs = (mu.eff + 2) / (n + mu.eff + 5)
+    cs = (mu.eff + 2) / (n + mu.eff + 3)
     ds = 1 + 2 * max(0, sqrt((mu.eff - 1) / (n + 1)) - 1) + cs # damping factor
-
     # covariance matrix Adaptation parameters
-    cc = (4 + mu.eff / n) / (n + 4 + 2 * mu.eff / n)
-    c1 = 2 / ((n + 1.3)^2 + mu.eff)
+    cc = 4 / (n + 4)
     alpha.mu = 2L
-    cmu = min(1 - c1, alpha.mu * (mu.eff - 2 + 1/mu.eff) / ((n + 2)^2 + mu.eff))
+    cmu = mu.eff 
+    ccov = (1/cmu) * 2/(n+1.4)^2 + (1-1/cmu) * ((2*cmu-1)/((n+2)^2+2*cmu))
 
     # covariance matrix
     sigma = getCMAESParameter(control, "sigma", 1)
@@ -191,16 +190,20 @@ cma_esr_csa = function(
   		# Update evolution path with cumulative step-size Adaptation (CSA) / path length control
       # For an explanation of the last factor see appendix A in https://www.lri.fr/~hansen/cmatutorial.pdf
       ps = (1 - cs) * ps + sqrt(cs * (2 - cs) * mu.eff) * (Cinvsqrt %*% y.w)
-  		h.sigma = as.integer(norm2(ps) / sqrt(1 - (1 - cs)^(2 * (iter + 1))) < chi.n * (1.4 + 2 / (n + 1)))
+
+      h.sigma <- drop((norm(ps)/sqrt(1-(1-cs)^(2*n.evals/lambda))/chi.n) < (1.4 + 2/(n+1)))
 
   		# Update covariance matrix
       pc = (1 - cc) * pc + h.sigma * sqrt(cc * (2 - cc) * mu.eff) * y.w
       y = BD %*% z.best
-      delta.h.sigma = as.numeric((1 - h.sigma) * cc * (2 - cc) <= 1)
-  		C = (1 - c1 - cmu) * C + c1 * (pc %*% t(pc) + delta.h.sigma * C) + cmu * y %*% diag(weights) %*% t(y)
+
+      C = (1 - ccov) * C +
+        ccov * (1/cmu) * (pc %o% pc + (1-h.sigma) * cc*(2-cc) * C) +
+        ccov * (1-1/cmu) * y %*% diag(weights) %*% t(y)
+
 
       # Update step-size sigma
-      sigma = sigma * exp(cs / ds * ((norm2(ps) / chi.n) - 1))
+      sigma <- sigma * exp((norm2(ps)/chi.n - 1)*cs/ds)
 
       # Finally do decomposition C = B D^2 B^T
       e = eigen(C, symmetric = TRUE)
