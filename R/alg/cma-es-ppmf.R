@@ -37,11 +37,14 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
   
   ## Logging options:
   log.all    <- controlParam("diag", TRUE)
-  log.sigma  <- controlParam("diag.sigma", log.all)
-  log.eigen  <- controlParam("diag.eigen", log.all)
-  log.value  <- controlParam("diag.value", log.all)
-  log.pop    <- controlParam("diag.pop", log.all)
-  log.bestVal<- controlParam("diag.bestVal", log.all)
+  log.sigma  <- controlParam("diag.sigma", 1)
+  log.ps  <- controlParam("diag.ps", 0)
+  log.eigen  <- controlParam("diag.eigen", 0)
+  log.value  <- controlParam("diag.value", 1)
+  log.pop    <- controlParam("diag.pop", 0)
+  log.xmean    <- controlParam("diag.xmean", 0)
+  log.meanOld    <- controlParam("diag.meanOld", 0) 
+  log.bestVal<- controlParam("diag.bestVal", 1)
   
   ## Strategy parameter setting (defaults as recommended by Nicolas Hansen):
   lambda      <- controlParam("lambda", 4*N - 1)
@@ -73,13 +76,19 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
   
   ## Preallocate logging structures:
   if (log.sigma)
-    sigma.log <- numeric(maxiter)
+    sigma.log <- numeric(maxiter) 
+  if (log.ps)
+    ps.log <- numeric(maxiter)
   if (log.eigen)
     eigen.log <- matrix(0, nrow=maxiter, ncol=N)
   if (log.value)
     value.log <- matrix(0, nrow=maxiter, ncol=mu)
   if (log.pop)
     pop.log <- array(0, c(N, mu, maxiter))
+ if (log.xmean)
+    xmean.log <- array(0, c(1, N, maxiter))
+ if (log.meanOld)
+    meanOld.log <- array(0, c(1, N, maxiter))   
   if(log.bestVal)
     bestVal.log <-  matrix(0, nrow=0, ncol=1)
   
@@ -99,14 +108,9 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
   msg <- NULL     ## Reason for terminating
   nm <- names(par) ## Names of parameters
   
-  ## Preallocate work arrays:
-   arx <- matrix(0.0, nrow=N, ncol=lambda)
   eval_mean = Inf
   eval_meanOld = Inf
-  arx <-  replicate(lambda, runif(N,lower, upper))
-  arfitness <- rep(Inf, lambda) 
- # arfitness <- apply(arx, 2, function(x) fn(x, ...) * fnscale)
- # counteval <- counteval + lambda
+
   while (counteval < budget) {
     iter <- iter + 1L
     
@@ -173,7 +177,8 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     eval_meanOld = eval_mean
     mean_point = apply(vx, 1, mean) %>% t() %>% t()
     eval_mean = apply(mean_point, 2, function(x) fn(x, ...) * fnscale)
-   
+   # if (log.xmean) xmean.log[,,iter] <- xmean
+  #  if (log.meanOld) meanOld.log[,,iter] <- mean_point                 
     counteval = counteval + 1 
     ## Adapt Covariance Matrix:
     BDz <- BD %*% selz
@@ -190,8 +195,9 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
       length(which(arfitness < eval_meanOld))/lambda
     sigma = 
       sigma * exp(d_param * (p_succ - p_target) / (1 - p_target))
-
-
+    
+    if (log.ps)
+      ps.log[iter] <- p_succ
     
     e <- eigen(C, symmetric=TRUE)
     eE <- eigen(cov(t(arx)))
@@ -238,8 +244,11 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
   ## where actually performed.
   if (log.value) log$value <- value.log[1:iter,]
   if (log.sigma) log$sigma <- sigma.log[1:iter]
+  if (log.ps) log$ps <- ps.log[1:iter]                    
   if (log.eigen) log$eigen <- eigen.log[1:iter,]
   if (log.pop)   log$pop   <- pop.log[,,1:iter]
+  #if (log.xmean)   log$xmean   <- xmean.log[,,1:iter]
+  #if (log.meanOld)   log$meanOld   <- meanOld.log[,,1:iter]                    
   if (log.bestVal) log$bestVal <- bestVal.log
   
   ## Drop names from value object
