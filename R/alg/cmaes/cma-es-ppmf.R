@@ -29,7 +29,7 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
   trace       <- controlParam("trace", FALSE)
   fnscale     <- controlParam("fnscale", 1)
   stopfitness <- controlParam("stopfitness", -Inf)
-  budget      <- controlParam("budget", 10000*N )                     ## The maximum number of fitness function calls
+  budget      <- controlParam("budget", 2*10^5 )                     ## The maximum number of fitness function calls
   sigma       <- controlParam("sigma", 1)
   sc_tolx     <- controlParam("stop.tolx", 1e-12 * sigma) ## Undocumented stop criterion
   keep.best   <- controlParam("keep.best", TRUE)
@@ -204,10 +204,10 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     if (log.eigen)
       eigen.log[iter,] <- rev(sort(eE$values))
     
-    if (!all(e$values >= sqrt(.Machine$double.eps) * abs(e$values[1]))) {      
-      msg <- "Covariance matrix 'C' is numerically not positive definite."
-      break
-    }
+ #   if (!all(e$values >= sqrt(.Machine$double.eps) * abs(e$values[1]))) {      
+ #     msg <- "Covariance matrix 'C' is numerically not positive definite."
+ #     break
+ #   }
     
     B <- e$vectors
     D <- diag(sqrt(e$values), length(e$values))
@@ -222,10 +222,10 @@ cma_es_ppmf <- function(par, fn, ..., lower, upper, CMA = TRUE, control=list()) 
     ## Check stop conditions:
     
     ## Condition 1 (sd < tolx in all directions):
-    if (all(D < sc_tolx) && all(sigma * pc < sc_tolx)) {
-      msg <- "All standard deviations smaller than tolerance."
-      break
-    }
+#    if (all(D < sc_tolx) && all(sigma * pc < sc_tolx)) {
+#      msg <- "All standard deviations smaller than tolerance."
+#      break
+#    }
     
     ## Escape from flat-land:
     if (arfitness[1] == arfitness[min(1+floor(lambda/2), 2+ceiling(lambda/4))]) { 
