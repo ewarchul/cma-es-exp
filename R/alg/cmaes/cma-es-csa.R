@@ -27,8 +27,8 @@ cma_es_csa <- function(par, fn, ..., lower, upper, if_CMA = TRUE, control=list()
   ## Parameters:
   trace       <- controlParam("trace", FALSE)
   fnscale     <- controlParam("fnscale", 1)
-  stopfitness <- controlParam("stopfitness", -10^-20)
-  budget      <- controlParam("budget", 2*10^5)                     ## The maximum number of fitness function calls
+  stopfitness <- controlParam("stopfitness", -Inf)
+  budget      <- controlParam("budget", 200000)                     ## The maximum number of fitness function calls
   sigma       <- controlParam("sigma", 1)
   sc_tolx     <- controlParam("stop.tolx", 1e-12 * sigma) ## Undocumented stop criterion
   keep.best   <- controlParam("keep.best", TRUE)
@@ -187,10 +187,10 @@ cma_es_csa <- function(par, fn, ..., lower, upper, if_CMA = TRUE, control=list()
     if (log.eigen)
       eigen.log[iter,] <- rev(sort(eE$values))
     
-   # if (!all(e$values >= sqrt(.Machine$double.eps) * abs(e$values[1]))) {      
-   #   msg <- "Covariance matrix 'C' is numerically not positive definite."
-   #   break
-   # }
+    if (!all(e$values >= sqrt(.Machine$double.eps) * abs(e$values[1]))) {      
+      msg <- "Covariance matrix 'C' is numerically not positive definite."
+      #break
+    }
 
     if (log.budget)
       budget.log[iter] <- counteval
@@ -202,16 +202,20 @@ cma_es_csa <- function(par, fn, ..., lower, upper, if_CMA = TRUE, control=list()
     ## break if fit:
     if (arfitness[1] <= stopfitness * fnscale) {
       msg <- "Stop fitness reached."
-      break
+      B <- diag(N)
+      D <- diag(N)
+      BD <- B %*% D
+      C <- BD %*% t(BD)
+   #   break
     }
     
     ## Check stop conditions:
     
     ## Condition 1 (sd < tolx in all directions):
- #   if (all(D < sc_tolx) && all(sigma * pc < sc_tolx)) {
- #     msg <- "All standard deviations smaller than tolerance."
- #     break
- #   }
+#    if (all(D < sc_tolx) && all(sigma * pc < sc_tolx)) {
+#      msg <- "All standard deviations smaller than tolerance."
+#      break
+#    }
     
     ## Escape from flat-land:
     if (arfitness[1] == arfitness[min(1+floor(lambda/2), 2+ceiling(lambda/4))]) { 
