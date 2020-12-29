@@ -1,0 +1,15 @@
+methods:
+     1:
+       algorithm: "ipop_cma_esr_csa"
+ids:
+  - "ipop-cma-es-csa-bias"
+probnum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+dims:
+  - 10
+  - 20
+cec: 21
+repnum: 30
+suite: "bias"
+cpupc: 0.75
+source: "~/cma-es-exp/R/alg/cmaesr"
+dest: "~/cma-es-exp/data"
