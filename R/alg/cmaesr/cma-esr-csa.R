@@ -15,7 +15,11 @@ cma_esr_csa = function(
   n = length(par)
 	
   # get stopping conditions
-  budget = 10000 * n
+  budget = if (n == 10) {
+    200000
+  } else {
+    1000000
+  }
   stop_ons_list = 
     c(
       list(stopOnTolX(1e-12)),
