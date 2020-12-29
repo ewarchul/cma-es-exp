@@ -10,5 +10,5 @@ cec: 21
 repnum: 30
 suite: "bias"
 cpupc: 0.75
-source: "~/cma-es-exp/src/alg"
+source: "~/cma-es-exp/R/alg/cmaes"
 dest: "~/cma-es-exp/data"
