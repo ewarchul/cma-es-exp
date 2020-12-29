@@ -1,0 +1,15 @@
+methods:
+        1:
+                algorithm: "cma_es_ppmf"
+ids:
+  - "cec14-2021-ppmf-10D"
+probnum: [11, 17, 21]
+dims:
+  - 10
+cec: 14
+repnum: 30
+cpupc: 0.75
+suite: "basic"
+source: "~/cma-es-exp/R/alg/cmaes"
+dest: "~/cma-es-exp/data/ppmf-fixed"
+save: 1

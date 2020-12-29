@@ -1,0 +1,27 @@
+methods:
+        1:
+                algorithm: "cma_esr_csa"
+        2:
+                algorithm: "ipop_cma_esr_csa"
+        3:
+                algorithm: "cma_esr_ppmf"
+        4:
+                algorithm: "ipop_cma_esr_ppmf"
+ids:
+  - "cma-esr-csa-final30"
+  - "ipop-cma-esr-csa-final30"
+  - "cma-esr-ppmf-final30"
+  - "ipop-cma-esr-ppmf-final30"
+
+probnum: [1, 2, 3, 
+        4, 5, 6, 7, 8, 9, 10,
+        11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+        21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
+dims:
+  - 30
+cec: 17
+repnum: 51
+cpupc: 0.75
+source: "~/cma-es-exp/R/alg/cmaesr"
+dest: "~/cma-es-exp/data/cmaesr-final"
+save: 1

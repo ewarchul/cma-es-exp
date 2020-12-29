@@ -1,0 +1,17 @@
+methods:
+        1:
+                algorithm: "cma_esr_csa"
+        2:
+                algorithm: "cma_esr_ppmf"
+ids:
+  - "cma_esr_csa_test"
+  - "cma_esr_ppmf_test"
+probnum: [1, 2, 3]
+dims:
+  - 10
+cec: 17
+repnum: 51
+cpupc: 0.75
+source: "~/cma-es-exp/R/alg/cmaesr"
+dest: "~/cma-es-exp/data/cmaesr"
+save: 1
